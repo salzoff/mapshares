@@ -1,23 +1,87 @@
-import Vue from 'vue'
-import Router from 'vue-router'
-import Home from './views/Home.vue'
+import Vue from 'vue';
+import Router from 'vue-router';
+import Home from './views/Home.vue';
+import Map from './views/Map';
+import MapDrawerContent from '@/components/map/DrawerContent.vue';
+import Profile from './views/Profile';
+import EditProfile from './views/EditProfile';
+import Login from './views/Login';
+import Logout from './views/Logout';
+import Signup from './views/Signup';
+import firebase from 'firebase';
 
-Vue.use(Router)
+Vue.use(Router);
 
-export default new Router({
-  routes: [
-    {
-      path: '/',
-      name: 'home',
-      component: Home
-    },
-    {
-      path: '/about',
-      name: 'about',
-      // route level code-splitting
-      // this generates a separate chunk (about.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
-      component: () => import(/* webpackChunkName: "about" */ './views/About.vue')
+const router = new Router({
+    routes: [
+        {
+            path: '*',
+            redirect: '/'
+        },
+        {
+            path: '/',
+            name: 'home',
+            component: Home
+        },
+        {
+            path: '/login',
+            name: 'login',
+            component: Login
+        },
+        {
+            path: '/signup',
+            name: 'signup',
+            component: Signup
+        },
+        {
+            path: '/map',
+            name: 'map',
+            components: {
+                default: Map,
+                rightSideDrawer: MapDrawerContent
+            },
+            meta: {
+                requiresAuth: true
+            }
+        },
+        {
+            path: '/logout',
+            name: 'logout',
+            component: Logout,
+            meta: {
+                requiresAuth: true
+            }
+        },
+        {
+            path: '/profile',
+            name: 'profile',
+            component: Profile,
+            meta: {
+                requiresAuth: true
+            }
+        },
+        {
+            path: '/editprofile/:uid?',
+            name: 'editprofile',
+            component: EditProfile,
+            meta: {
+                requiresAuth: true
+            }
+        }
+    ]
+});
+
+router.beforeEach((to, from, next) => {
+    const requiresAuth = to.matched.some(x => x.meta.requiresAuth);
+    const currentUser = firebase.auth().currentUser;
+
+    if (requiresAuth && !currentUser) {
+        next('/login');
+    } else if (requiresAuth && currentUser) {
+        next();
+    } else {
+        next();
     }
-  ]
-})
+});
+
+export default router;

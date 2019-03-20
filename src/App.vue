@@ -1,29 +1,75 @@
 <template>
-  <div id="app">
-    <div id="nav">
-      <router-link to="/">Home</router-link> |
-      <router-link to="/about">About</router-link>
-    </div>
-    <router-view/>
-  </div>
+    <v-app>
+        <v-toolbar app>
+            <v-toolbar-title class="headline text-uppercase">
+                <span>MapShares</span>
+                <span class="font-weight-light v-toolbar__subtitle ml-1">Geocaching</span>
+            </v-toolbar-title>
+            <v-spacer></v-spacer>
+            <v-toolbar-items>
+                <v-btn flat>
+                    <router-link to="/">Home</router-link>
+                </v-btn>
+                <template v-if="isAuthenticated">
+                    <v-btn flat>
+                        <router-link to="/map">Map</router-link>
+                    </v-btn>
+                    <v-btn flat>
+                        <router-link to="/profile">Profile</router-link>
+                    </v-btn>
+                    <v-btn flat>
+                        <router-link to="/logout">Logout</router-link>
+                    </v-btn>
+                </template>
+                <template v-else>
+                    <v-btn flat>
+                        <router-link to="/login">Login</router-link>
+                    </v-btn>
+                    <v-btn flat>
+                        <router-link to="/signup">Sign up</router-link>
+                    </v-btn>
+                </template>
+            </v-toolbar-items>
+        </v-toolbar>
+        <v-navigation-drawer hide-overlay app right v-model="showDrawer">
+            <router-view name="rightSideDrawer"></router-view>
+        </v-navigation-drawer>
+        <v-content>
+            <template v-if="isAuthenticated && isFetchingInitialUserProfile">
+                Fetching user profile...
+            </template>
+            <template v-else>
+                <router-view></router-view>
+            </template>
+        </v-content>
+    </v-app>
 </template>
 
-<style lang="scss">
-#app {
-  font-family: 'Avenir', Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-}
-#nav {
-  padding: 30px;
-  a {
-    font-weight: bold;
-    color: #2c3e50;
-    &.router-link-exact-active {
-      color: #42b983;
+<script>
+import { EventBus, Events } from './events';
+export default {
+    name: 'App',
+    data () {
+        return {
+            showDrawer: false
+        };
+    },
+    mounted() {
+        EventBus.$on(Events.SHOW_CONTENT_IN_DRAWER, () => {
+            if (!this.showDrawer) {
+                this.showDrawer = true;
+            }
+        });
+        EventBus.$on(Events.HIDE_CONTENT_IN_DRAWER, () => {
+            console.trace('hide content');
+            this.showDrawer = false;
+        });
     }
-  }
-}
+};
+</script>
+
+<style scoped lang="scss">
+    .v-toolbar__subtitle {
+        text-transform: uppercase;
+    }
 </style>
