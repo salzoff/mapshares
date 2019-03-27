@@ -6,7 +6,7 @@
                 <profile-form></profile-form>
             </v-flex>
         </v-layout>
-        <social-media-login></social-media-login>
+        <social-media-login :signUp="true"></social-media-login>
     </v-container>
 </template>
 

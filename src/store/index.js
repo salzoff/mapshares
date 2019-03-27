@@ -3,6 +3,7 @@ import Vuex from 'vuex';
 import userModule from './modules/user';
 import drawerModule from './modules/drawer';
 import boxModule from './modules/box';
+import mapModule from './modules/map';
 import { startLocationUpdater, stopLocationUpdater } from './locationUpdater';
 import { auth } from '@/firebaseConfig';
 Vue.use(Vuex);
@@ -11,7 +12,8 @@ const store = new Vuex.Store({
     modules: {
         user: userModule,
         drawer: drawerModule,
-        box: boxModule
+        box: boxModule,
+        map: mapModule
     },
     actions: {
         clearUserData: (context) => {

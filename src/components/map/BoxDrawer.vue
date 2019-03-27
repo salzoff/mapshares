@@ -1,25 +1,37 @@
 <template>
-    <v-layout v-if="!data.position">
-        <h3 class="ma-3 subheading ">Select position on map</h3>
-    </v-layout>
-    <v-layout v-else>
-        <v-form class="ma-2 drawer-boxform" @submit.prevent="saveBox">
-            <v-text-field v-model="data.title" label="Title" />
-            <v-textarea v-model="data.description" label="Description" />
-            <v-text-field v-model="data.value" type="number" label="Value" />
-            <v-btn class="ml-0" type="submit" color="success">Save</v-btn>
-            <v-btn v-if="data.id" color="warning" @click="deleteBox">Delete</v-btn>
-        </v-form>
-    </v-layout>
+    <v-container>
+        <v-layout v-if="!data.position">
+            <h3 class="subheading ">Select position on map</h3>
+        </v-layout>
+        <v-layout v-else>
+            <map-box-form :data="formData" @saveBox="saveBox" @deleteBox="deleteBox" />
+        </v-layout>
+        <map-box-hints
+            v-if="boxId"
+            :mapApi="mapApi"
+            :google="google"
+            :hints="boxHints"
+            :editBoxMarker="editBoxMarker"
+            @saveBoxHints="saveBoxHints"
+            @deleteBoxHint="deleteBoxHint"
+        ></map-box-hints>
+    </v-container>
 </template>
 
 <script>
 import { EventBus, Events } from '../../events';
+import _difference from 'lodash/difference';
+import _pick from 'lodash/pick';
+import MapBoxForm from '@/components/map/box/Form.vue';
+import MapBoxHints from '@/components/map/box/Hints.vue';
 export default {
     name: 'map-box-drawer',
+    components: { MapBoxForm, MapBoxHints },
     data() {
         return {
-            mode: 'add'
+            currentHint: null,
+            mapApi: null,
+            google: null
         };
     },
     computed: {
@@ -28,9 +40,11 @@ export default {
                 return this.$store.getters['drawer/data'];
             },
             set(data) {
-                console.log(data);
                 this.$store.dispatch('drawer/setData', data);
             }
+        },
+        formData() {
+            return _pick(this.data, ['title', 'description', 'value', 'image', 'imageName', 'id']);
         },
         boxMarker: {
             get() {
@@ -39,11 +53,34 @@ export default {
             set(boxMarker) {
                 this.data = { boxMarker };
             }
-
+        },
+        boxHintsInStore() {
+            return this.$store.getters['box/hintsForBox'];
+        },
+        editBoxMarker() {
+            return this.data.editBoxMarker;
+        },
+        boxId() {
+            return this.data.id;
+        },
+        boxHints: {
+            get() {
+                const boxHints = this.data.boxHints;
+                if (!boxHints) {
+                    return [];
+                } else {
+                    return boxHints;
+                }
+            },
+            set(boxHints) {
+                this.data = { boxHints };
+            }
         }
     },
     methods: {
-        saveBox() {
+        saveBox(data) {
+            console.log('saveBox', data);
+            this.data = data;
             const newBox = Object.assign({}, this.data);
             delete newBox.boxMarker;
             if (this.data.id) {
@@ -52,7 +89,6 @@ export default {
                 });
             } else {
                 this.$store.dispatch('box/addBox', newBox).then((boxRef) => {
-                    console.log(boxRef);
                     this.$store.dispatch('drawer/setTitle', 'Edit box');
                     this.boxMarker.setMap(null);
                     this.$store.dispatch('drawer/setData', { id: boxRef.get().id });
@@ -64,6 +100,23 @@ export default {
                 this.$store.dispatch('drawer/clearData');
                 EventBus.$emit(Events.HIDE_CONTENT_IN_DRAWER);
             });
+        },
+        saveBoxHints() {
+            if (this.currentHint) {
+                this.saveBoxHint(this.currentHint);
+            }
+            this.$store.dispatch('box/saveBoxHints', this.data).then(() => {
+                this.boxHints = this.boxHints.filter(hint => hint.id);
+            });
+        },
+        deleteBoxHint(boxHint, index = null) {
+            if (boxHint.id) {
+                this.$store.dispatch('box/deleteBoxHint', {
+                    id: this.data.id,
+                    boxHint
+                });
+            }
+            this.boxHints.splice(index, 1);
         }
     },
     watch: {
@@ -77,12 +130,44 @@ export default {
                     };
                 }
             }
+        },
+        boxId() {
+            this.currentHint = null;
+        },
+        boxHintsInStore(hintsInStore) {
+            const hintIds = hintsInStore.map(hint => hint.id);
+            const foundIds = [];
+            const newBoxHints = Array.from(this.boxHints);
+            newBoxHints.forEach((hint, index) => {
+                if (hint.id) {
+                    let hintInStore = hintsInStore.find(hintInStore => hintInStore.id === hint.id);
+                    if (!hintInStore) {
+                        newBoxHints.splice(index, 1);
+                    } else {
+                        newBoxHints[index] = hintInStore;
+                    }
+                }
+                foundIds.push(hint.id);
+            });
+            _difference(hintIds, foundIds).forEach(hintId => {
+                newBoxHints.push(hintsInStore.find(hint => hint.id === hintId));
+            });
+            this.boxHints = newBoxHints;
         }
     },
     mounted() {
         EventBus.$on(Events.HIDE_CONTENT_IN_DRAWER, () => {
             this.$store.dispatch('drawer/clearData');
         });
+        if (this.$store.getters['map/getMapApi']) {
+            this.mapApi = this.$store.getters['map/getMapApi'];
+            this.google = this.$store.getters['map/getGoogle'];
+        } else {
+            EventBus.$on(Events.MAP_API_LOADED, () => {
+                this.mapApi = this.$store.getters['map/getMapApi'];
+                this.google = this.$store.getters['map/getGoogle'];
+            });
+        }
     }
 };
 </script>

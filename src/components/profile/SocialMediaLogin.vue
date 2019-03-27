@@ -42,20 +42,25 @@ export default {
     methods: {
         signUpWith(provider) {
             firebase.auth().signInWithPopup(providers[provider]).then((userInfo) => {
-                console.log(this);
                 this.$store.dispatch('user/setCurrentUser', userInfo.user);
-                this.$store.dispatch('user/fetchUserProfile').then(() => {
+                if (this.signUp) {
                     const profile = {
                         username: userInfo.user.displayName,
                         email: userInfo.user.email,
-                        createdAt: new Date(),
+                        imageUrl: userInfo.user.photoURL,
                         lastLogin: new Date(),
-                        imageUrl: userInfo.user.photoURL
+                        createdAt: new Date()
                     };
                     this.$store.dispatch('user/updateUserProfile', profile).then(() => {
+                        this.$store.dispatch('user/fetchUserProfile').then(() => {
+                            this.$router.push('/profile');
+                        });
+                    });
+                } else {
+                    this.$store.dispatch('user/fetchUserProfile').then(() => {
                         this.$router.push('/profile');
                     });
-                });
+                }
             });
         }
     }

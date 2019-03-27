@@ -14,9 +14,10 @@
 <script>
 import { EventBus, Events } from '../../events';
 import MapBoxDrawer from './BoxDrawer';
+import MapUserDrawer from './UserDrawer';
 export default {
     name: 'map-drawer-content',
-    components: { MapBoxDrawer },
+    components: { MapBoxDrawer, MapUserDrawer },
     computed: {
         activeDrawerComponent() {
             return this.$store.getters['drawer/component'];

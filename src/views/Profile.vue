@@ -2,7 +2,7 @@
     <v-container>
         <template v-if="currentUserProfile">
             <h2 class="mb-2">Profile of {{ currentUserProfile.username }}</h2>
-            <profile-overview :profile="currentUserProfile"></profile-overview>
+            <profile-overview :profile="currentUserProfile" :editMode="true"></profile-overview>
         </template>
         <template v-else>
             <div>Loading profile...</div>

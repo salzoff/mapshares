@@ -42,7 +42,6 @@ export default {
                     .then((userInfo) => {
                         this.$store.dispatch('user/setCurrentUser', userInfo.user);
                         this.$store.dispatch('user/fetchUserProfile').then(() => {
-                            this.profile.createdAt = new Date();
                             this.profile.lastLogin = new Date();
                             this.updateProfile();
                         });

@@ -8,7 +8,7 @@ const startLocationUpdater = (store) => {
                     store.dispatch('user/updateUserPosition', { lat: position.coords.latitude, lng: position.coords.longitude });
                 });
             }
-        }, 30000);
+        }, 120000);
     }
 };
 

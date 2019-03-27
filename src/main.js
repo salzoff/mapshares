@@ -1,22 +1,27 @@
 import Vue from 'vue';
 import './plugins/vuetify';
+import Vuelidate from 'vuelidate';
 import App from './App.vue';
 import router from './router';
 import store from './store';
 import * as fb from './firebaseConfig';
 import '@fortawesome/fontawesome-free/js/all';
 import './config';
-import authMixin from '@/mixins/authMixin';
+import authMixin from '@/mixins/auth';
+import formatterMixin from '@/mixins/formatter';
 import * as VueGoogleMaps from 'vue2-google-maps';
 
+Vue.use(Vuelidate);
 Vue.use(VueGoogleMaps, {
     load: {
         key: 'AIzaSyAQgnykziSrXxoEcqAiQirbK-amboOxbQ4',
-        autobindAllEvents: true
+        autobindAllEvents: true,
+        libraries: 'geometry'
     }
 });
 
 Vue.mixin(authMixin);
+Vue.mixin(formatterMixin);
 
 Vue.config.productionTip = true;
 

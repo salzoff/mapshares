@@ -1,5 +1,6 @@
 import firebase from 'firebase';
 import { userProfileCollection } from '@/firebaseConfig';
+import { updateUserLocationInGeoLocation } from '../../helper/geofirestore';
 
 const state = {
     currentUser: null,
@@ -39,6 +40,9 @@ const actions = {
         delete payload.password;
         const userProfile = Object.assign({}, state.userProfile, payload);
         commit('SET_USER_PROFILE', userProfile);
+        if (state.userProfile.lastLocation) {
+            updateUserLocationInGeoLocation(Object.assign(state.userProfile, { id: state.currentUser.uid }));
+        }
         return userProfileCollection.doc(state.currentUser.uid).set(userProfile);
     },
     updateUserPosition: ({ dispatch }, payload) => {
@@ -52,7 +56,13 @@ const actions = {
             commit('SET_FETCHING_INITIAL_USER_PROFILE', true);
         }
         return userProfileCollection.doc(state.currentUser.uid).get().then(response => {
-            commit('SET_USER_PROFILE', response.data());
+            const data = response.data();
+            commit('SET_USER_PROFILE', Object.assign(response.data(), {
+                ref: response.ref,
+                lastLocationAt: data.lastLocationAt ? data.lastLocationAt.toDate() : new Date(),
+                createdAt: data.createdAt.toDate(),
+                lastLogin: data.lastLogin.toDate()
+            }));
             commit('SET_FETCHING_INITIAL_USER_PROFILE', false);
         });
     },

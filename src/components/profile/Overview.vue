@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="full-width">
         <v-layout row>
             <v-flex xs12>
                 <img class="user-image" v-if="imageUrl" :src="imageUrl" />
@@ -8,7 +8,7 @@
                 </template>
             </v-flex>
         </v-layout>
-        <v-layout row class="mt-2">
+        <v-layout row class="mt-2" v-if="editMode">
             <v-flex xs12>
                 <file-input ref="imageInput" v-model="image" label="Select new image..." accept="image/*" />
                 <v-btn :disabled="image === null" @click="saveImage" class="ml-0">Save image</v-btn>
@@ -35,7 +35,19 @@
             <v-flex md3 xs12 class="body-2">Homepage</v-flex>
             <v-flex md3 xs12>{{ profile.homepage }}</v-flex>
         </v-layout>
-        <v-layout row>
+        <v-layout row class="mt-1">
+            <v-flex md3 xs12 class="body-2">Last login</v-flex>
+            <v-flex md3 xs12>{{ formatDate(profile.lastLogin) }}</v-flex>
+        </v-layout>
+        <v-layout row class="mt-1">
+            <v-flex md3 xs12 class="body-2">Last location at</v-flex>
+            <v-flex md3 xs12>{{ formatDate(profile.lastLocationAt) }}</v-flex>
+        </v-layout>
+        <v-layout row class="mt-1">
+            <v-flex md3 xs12 class="body-2">Created at</v-flex>
+            <v-flex md3 xs12>{{ formatDate(profile.createdAt) }}</v-flex>
+        </v-layout>
+        <v-layout row v-if="editMode">
             <v-flex xs12>
                 <v-btn class="mt-2 ml-0" @click="editProfile">Edit data</v-btn>
             </v-flex>
@@ -53,6 +65,10 @@ export default {
         profile: {
             type: Object,
             required: true
+        },
+        editMode: {
+            type: Boolean,
+            default: false
         }
     },
     data() {
@@ -75,6 +91,10 @@ export default {
             });
         },
         updateImageUrl() {
+            if (this.profile.imageUrl.startsWith(('http'))) {
+                this.imageUrl = this.profile.imageUrl;
+                return;
+            }
             const imageRef = storage.ref().child(this.profile.imageUrl);
             imageRef.getDownloadURL().then(url => {
                 this.imageUrl = url;
@@ -84,10 +104,13 @@ export default {
             this.$router.push('editprofile');
         }
     },
-    mounted() {
-        if (!this.profile.imageUrl.startsWith('http')) {
+    watch: {
+        profile() {
             this.updateImageUrl();
         }
+    },
+    mounted() {
+        this.updateImageUrl();
     }
 };
 </script>
@@ -96,5 +119,8 @@ export default {
     .user-image {
         max-width: 200px;
         max-height: 200px;
+    }
+    .full-width {
+        width: 100%;
     }
 </style>

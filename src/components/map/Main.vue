@@ -18,7 +18,9 @@
                     <gmap-map
                         :center="center"
                         @center_changed="updateCenter"
+                        @zoom_changed="updateZoom"
                         @idle="sync"
+                        @init="updateGeoQuery"
                         :zoom="zoom"
                         style="width: 100%; height: 100%"
                         @click="handleMapClick"
@@ -42,7 +44,14 @@ import _difference from 'lodash/difference';
 import { EventBus, Events } from '../../events';
 import { gmapApi } from 'vue2-google-maps';
 const modes = {
-    ADD_BOX: 1
+    ADD_BOX: 1,
+    EDIT_BOX: 2,
+    VIEW_USER: 3
+};
+const mapObjectTypes = {
+    USER: 1,
+    BOX: 2,
+    HINT: 3
 };
 export default {
     name: 'map-main',
@@ -57,10 +66,12 @@ export default {
                 lng: 40
             },
             zoom: 15,
+            reportedZoom: 15,
             calculatedHeight: 0,
             mode: 0,
             mapApi: null,
-            boxMarkers: {}
+            boxMarkers: {},
+            objects: {}
         };
     },
     computed: {
@@ -79,8 +90,11 @@ export default {
                 this.$store.dispatch('drawer/setData', data);
             }
         },
-        boxesInMap() {
-            return this.$store.getters['box/boxesInMap'];
+        rangeCircle() {
+            return this.drawerData.rangeCircle;
+        },
+        mapObjects() {
+            return this.$store.getters['map/mapObjects'];
         }
     },
     methods: {
@@ -89,9 +103,23 @@ export default {
                 lat: latLng.lat(),
                 lng: latLng.lng()
             };
+            this.$store.dispatch('map/updateGeoQuery', {
+                center: latLng,
+                zoom: this.mapApi.getZoom(),
+                bounds: this.mapApi.getBounds()
+            });
+        },
+        updateZoom(zoom) {
+            this.reportedZoom = zoom;
+            this.$store.dispatch('map/updateGeoQuery', {
+                center: this.mapApi.getCenter(),
+                zoom: zoom,
+                bounds: this.mapApi.getBounds()
+            });
         },
         sync () {
             this.center = this.reportedCenter;
+            this.zoom = this.reportedZoom;
         },
         moveToUserPosition() {
             this.center = this.userPosition;
@@ -126,37 +154,149 @@ export default {
                     break;
             }
         },
-        markBoxes(boxes) {
-            const foundBoxes = [];
-            boxes.forEach(box => {
-                foundBoxes.push(box.id);
-                if (!this.boxMarkers[box.id]) {
-                    const newMarker = new this.google.maps.Marker({
-                        position: {
-                            lat: box.position.latitude,
-                            lng: box.position.longitude
-                        },
-                        map: this.mapApi,
-                        icon: 'assets/images/icons/logo-klein.gif'
-                    });
-                    newMarker.addListener('click', () => {
-                        this.$store.dispatch('drawer/setTitle', 'Edit box');
-                        this.$store.dispatch('drawer/setComponent', 'map-box-drawer');
-                        this.$store.dispatch('drawer/setData', Object.assign(box, { boxMarker: newMarker }));
-                        EventBus.$emit(Events.SHOW_CONTENT_IN_DRAWER);
-                    });
-                    this.boxMarkers[box.id] = newMarker;
+        markUser(user) {
+            if (user.id === this.currentUser.uid) {
+                return;
+            }
+            if (this.objects[user.id]) {
+                this.objects[user.id].marker.setMap(null);
+            }
+            const newMarker = new this.google.maps.Marker({
+                position: {
+                    lat: user.lastLocation.lat,
+                    lng: user.lastLocation.lng
+                },
+                map: this.mapApi,
+                icon: 'assets/images/icons/user.gif'
+            });
+            newMarker.id = user.id;
+            newMarker.addListener('click', e => {
+                this.mode = modes.VIEW_USER;
+                this.$store.dispatch('drawer/setTitle', 'View user');
+                this.$store.dispatch('drawer/setComponent', 'map-user-drawer');
+                this.$store.dispatch('drawer/setData', Object.assign({}, user, {
+                    viewedUser: user
+                }));
+                EventBus.$emit(Events.SHOW_CONTENT_IN_DRAWER);
+            });
+            user.marker = newMarker;
+            this.objects[user.id] = user;
+        },
+        markBox(box) {
+            if (this.objects[box.id]) {
+                this.objects[box.id].marker.setMap(null);
+            }
+
+            const newMarker = new this.google.maps.Marker({
+                position: {
+                    lat: box.position.lat,
+                    lng: box.position.lng
+                },
+                map: this.mapApi,
+                icon: 'assets/images/icons/logo-klein.gif',
+                label: {
+                    text: box.value.toString(),
+                    fontSize: '32px',
+                    fontWeight: 'bold',
+                    color: '#f1f1f1'
                 }
             });
-            _difference(Object.keys(this.boxMarkers), foundBoxes).forEach(key => {
-                this.boxMarkers[key].setMap(null);
-                delete this.boxMarkers[key];
+            newMarker.addListener('click', (e) => {
+                const newBox = this.objects[box.id];
+                this.mode = modes.EDIT_BOX;
+                this.$store.dispatch('drawer/setTitle', 'Edit box');
+                this.$store.dispatch('drawer/setComponent', 'map-box-drawer');
+                this.$store.dispatch('box/fetchHintsForBox', newBox.id).then(() => {
+                    this.$store.dispatch('drawer/setData', Object.assign(newBox, {
+                        editBoxMarker: newMarker,
+                        boxHints: this.$store.getters['box/hintsForBox']
+                    }));
+                });
+                EventBus.$emit(Events.SHOW_CONTENT_IN_DRAWER);
+            });
+            if (box.marker) {
+                box.marker.setMap(null);
+            }
+            newMarker.id = box.id;
+            box.marker = newMarker;
+            this.objects[box.id] = box;
+        },
+        markHint(hint) {
+            if (this.objects[hint.id]) {
+                this.objects[hint.id].marker.setMap(null);
+            }
+            const newMarker = new this.google.maps.Circle({
+                center: hint.position,
+                radius: hint.distanceRange,
+                fillColor: '#1976d2',
+                strokeWidth: 0,
+                fillOpacity: 0.5,
+                map: this.mapApi
+            });
+            if (hint.marker) {
+                hint.marker.setMap(null);
+            }
+            newMarker.id = hint.id;
+            hint.marker = newMarker;
+            this.objects[hint.id] = hint;
+        },
+        setHintLabels() {
+            this.mapObjects.filter(mapObject => mapObject.objectType === 3).forEach(mapObject => {
+                if (mapObject.forBox && this.objects[mapObject.forBox] && this.objects[mapObject.forBox].marker) {
+                    this.objects[mapObject.forBox].marker.setLabel({
+                        text: mapObject.distanceRange.toString(),
+                        fontSize: '24px',
+                        fontWeight: 'bold',
+                        color: '#fff'
+                    });
+                }
+            });
+        },
+        updateMapObjects(mapObjects) {
+            const objectsInMap = [];
+            mapObjects.forEach(mapObject => {
+                objectsInMap.push(mapObject.id);
+                switch (mapObject.objectType) {
+                    case mapObjectTypes.USER:
+                        this.markUser(mapObject);
+                        break;
+                    case mapObjectTypes.BOX:
+                        this.markBox(mapObject);
+                        break;
+                    case mapObjectTypes.HINT:
+                        this.markHint(mapObject);
+                        break;
+                    default:
+                        break;
+                }
+            });
+            const markedObjects = Object.keys(this.objects);
+            _difference(markedObjects, objectsInMap).forEach(objectId => {
+                if (this.objects[objectId] && this.objects[objectId].marker) {
+                    this.objects[objectId].marker.setMap(null);
+                }
+                delete this.mapObjects[objectId];
+            });
+        },
+        updateGeoQuery() {
+            this.$store.dispatch('map/updateGeoQuery', {
+                center: this.mapApi.getCenter(),
+                zoom: this.mapApi.getZoom(),
+                bounds: this.mapApi.getBounds()
             });
         }
     },
     watch: {
-        boxesInMap(boxes) {
-            this.markBoxes(boxes);
+        rangeCircle: {
+            deep: false,
+            handler: function(circle) {
+                if (circle) {
+                    circle.setMap(this.mapApi);
+                }
+            }
+        },
+        mapObjects(mapObjects) {
+            this.updateMapObjects(mapObjects);
         }
     },
     mounted () {
@@ -164,12 +304,27 @@ export default {
         this.moveToUserPosition();
         this.$refs.mapRef.$mapPromise.then((map) => {
             this.mapApi = map;
-            this.markBoxes(this.boxesInMap);
+            this.$store.commit('map/SET_MAP_API', map);
+            this.$store.commit('map/SET_GOOGLE', this.google);
+            const listener = this.mapApi.addListener('tilesloaded', e => {
+                this.updateGeoQuery();
+                this.google.maps.event.removeListener(listener);
+            });
+            EventBus.$emit(Events.MAP_API_LOADED);
         });
         EventBus.$on(Events.HIDE_CONTENT_IN_DRAWER, () => {
             if (this.drawerData.boxMarker) {
                 this.drawerData.boxMarker.setMap(null);
+                this.drawerData = { boxMarker: null };
             }
+            if (this.drawerData.rangeCircle) {
+                this.drawerData.rangeCircle.setMap(null);
+                this.drawerData = { rangeCircle: null };
+            }
+            if (this.drawerData.editBoxMarker) {
+                this.drawerData = { editBoxMarker: null };
+            }
+            this.mode = 0;
         });
     }
 };

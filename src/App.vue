@@ -31,7 +31,7 @@
                 </template>
             </v-toolbar-items>
         </v-toolbar>
-        <v-navigation-drawer hide-overlay app right v-model="showDrawer">
+        <v-navigation-drawer hide-overlay disable-resize-watcher stateless app right v-model="showDrawer" width="550">
             <router-view name="rightSideDrawer"></router-view>
         </v-navigation-drawer>
         <v-content>
@@ -61,7 +61,6 @@ export default {
             }
         });
         EventBus.$on(Events.HIDE_CONTENT_IN_DRAWER, () => {
-            console.trace('hide content');
             this.showDrawer = false;
         });
     }
