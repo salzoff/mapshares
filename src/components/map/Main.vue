@@ -100,6 +100,7 @@
 import _difference from 'lodash/difference';
 import { EventBus, Events } from '../../events';
 import { geoDistance } from '@/helper/location';
+import { db } from '@/firebaseConfig';
 import { gmapApi } from 'vue2-google-maps';
 const modes = {
     ADD_BOX: 1,
@@ -242,10 +243,11 @@ export default {
                 newMarker.id = user.id;
                 newMarker.addListener('click', e => {
                     console.log(user);
-                    user.userProfile.get().then(result => {
-                        /* const profileData = result.data();
-                        user.role = profileData.name;
-                        user.permissions = profileData.permissions; */
+                    db.doc(user.userRole).get().then(result => {
+                        const roleData = result.data();
+                        console.log(roleData);
+                        user.role = roleData.name;
+                        user.permissions = roleData.permissions;
                         this.mode = modes.VIEW_USER;
                         this.$store.dispatch('drawer/setTitle', 'View user');
                         this.$store.dispatch('drawer/setComponent', 'map-user-drawer');

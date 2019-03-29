@@ -14,7 +14,7 @@
                 <v-btn :disabled="image === null" @click="saveImage" class="ml-0">Save image</v-btn>
             </v-flex>
         </v-layout>
-        <div v-if="profile.view" class="subheading mt-2">{{ capitalize(profile.role) }}</div>
+        <div v-if="profile.role" class="subheading mt-2">{{ capitalize(profile.role) }}</div>
         <h3 class="mt-3">Profile data</h3>
         <v-layout row class="mt-2">
             <v-flex md3 xs12 class="body-2">Email</v-flex>

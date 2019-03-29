@@ -4,7 +4,7 @@
             <h3 class="subheading ">Select position on map</h3>
         </v-layout>
         <v-layout v-else>
-            <map-box-form :data="formData" @saveBox="saveBox" @deleteBox="deleteBox" />
+            <map-box-form :data="formData" @saveBox="saveBox" @deleteBox="deleteBox" @markAsFound="markAsFound" />
         </v-layout>
         <map-box-hints
             v-if="boxId"
@@ -100,6 +100,9 @@ export default {
                 this.$store.dispatch('drawer/clearData');
                 EventBus.$emit(Events.HIDE_CONTENT_IN_DRAWER);
             });
+        },
+        markAsFound() {
+            console.log('found');
         },
         saveBoxHints() {
             if (this.currentHint) {

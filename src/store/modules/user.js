@@ -57,17 +57,19 @@ const actions = {
         }
         return userProfileCollection.doc(state.currentUser.uid).get().then(response => {
             const data = response.data();
-            /* return data.userRole.get().then(roleResponse => {
-                const roleData = roleResponse.data(); */
-            commit('SET_USER_PROFILE', Object.assign(response.data(), {
-                ref: response.ref,
-                lastLocationAt: data.lastLocationAt ? data.lastLocationAt.toDate() : new Date(),
-                createdAt: data.createdAt.toDate(),
-                lastLogin: data.lastLogin.toDate() /* , */
-            }));
-            commit('SET_FETCHING_INITIAL_USER_PROFILE', false);
+            return data.userRole.get().then(roleResponse => {
+                const roleData = roleResponse.data();
+                commit('SET_USER_PROFILE', Object.assign(response.data(), {
+                    ref: response.ref,
+                    lastLocationAt: data.lastLocationAt ? data.lastLocationAt.toDate() : new Date(),
+                    createdAt: data.createdAt.toDate(),
+                    lastLogin: data.lastLogin.toDate(),
+                    role: roleData.name,
+                    permissions: roleData.permissions
+                }));
+                commit('SET_FETCHING_INITIAL_USER_PROFILE', false);
+            });
         });
-        /* }); */
     },
     clearUserData: ({ commit }) => {
         unsubscribeUserProfileCollection();
