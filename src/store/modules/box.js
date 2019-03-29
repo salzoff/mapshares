@@ -142,15 +142,19 @@ const actions = {
         payload.boxHints.forEach(boxHint => {
             const newBoxHint = _merge({}, boxHint, boxHint.value);
             delete newBoxHint.value;
+            if (!newBoxHint.id) {
+                newBoxHint.id = hintCollection.doc().id;
+            }
             switch (newBoxHint.type) {
                 case 1:
                     newBoxHint.position = new firebase.firestore.GeoPoint(newBoxHint.position.lat, newBoxHint.position.lng);
                     break;
                 case 3:
-                    newBoxHint.fileName = newBoxHint.image.name;
-                    if (!newBoxHint.id) {
-                        newBoxHint.id = hintCollection.doc().id;
+                    if (!newBoxHint.image) {
+                        return;
                     }
+                    newBoxHint.fileName = newBoxHint.image.name;
+
                     const imageRef = storage.ref().child(`boxHintImages/${newBoxHint.id}`);
                     const tmpHint = Object.assign({}, { image: newBoxHint.image });
                     imageRef.put(tmpHint.image);
@@ -159,7 +163,7 @@ const actions = {
                 default:
                     break;
             }
-            batch.set(hintCollection.doc(), newBoxHint);
+            batch.set(hintCollection.doc(newBoxHint.id), newBoxHint);
         });
         return batch.commit().then(() => {
             updateBoxHintsInGeoLocation(payload.id);

@@ -6,6 +6,9 @@ export default {
         },
         formatDate (dateTime) {
             return moment(dateTime).format('ll');
+        },
+        capitalize (text) {
+            return text.substring(0, 1).toUpperCase() + text.substring(1);
         }
     }
 };

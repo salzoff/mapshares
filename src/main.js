@@ -10,8 +10,12 @@ import './config';
 import authMixin from '@/mixins/auth';
 import formatterMixin from '@/mixins/formatter';
 import * as VueGoogleMaps from 'vue2-google-maps';
+import 'vue-image-lightbox/dist/vue-image-lightbox.min.css';
+import VueLazyLoad from 'vue-lazyload';
 
 Vue.use(Vuelidate);
+Vue.use(VueLazyLoad);
+
 Vue.use(VueGoogleMaps, {
     load: {
         key: 'AIzaSyAQgnykziSrXxoEcqAiQirbK-amboOxbQ4',

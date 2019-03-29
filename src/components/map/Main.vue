@@ -2,16 +2,73 @@
     <div>
         <v-layout>
             <v-flex xs2>
-                <v-list>
-                    <v-list-tile  @click="moveToUserPosition" class="map-action-item">
-                        <v-list-tile-action><v-icon>person_pin</v-icon></v-list-tile-action>
-                        <v-list-tile-content>Your location</v-list-tile-content>
-                    </v-list-tile>
-                    <v-list-tile @click="addBox" class="map-action-item">
-                        <v-list-tile-action><v-icon>add_location</v-icon></v-list-tile-action>
-                        <v-list-tile-content>Add box</v-list-tile-content>
-                    </v-list-tile>
-                </v-list>
+                <v-layout column fill-height>
+                    <v-list>
+                        <v-list-tile  @click="moveToUserPosition" class="map-action-item">
+                            <v-list-tile-action><v-icon>person_pin</v-icon></v-list-tile-action>
+                            <v-list-tile-content>Your location</v-list-tile-content>
+                        </v-list-tile>
+                        <v-list-tile @click="addBox" class="map-action-item">
+                            <v-list-tile-action><v-icon>add_location</v-icon></v-list-tile-action>
+                            <v-list-tile-content>Add box</v-list-tile-content>
+                        </v-list-tile>
+                    </v-list>
+                    <v-list>
+                        <v-list-tile>
+                            <v-list-tile-content>
+                                <span class="subheading">Display</span>
+                            </v-list-tile-content>
+                        </v-list-tile>
+                        <v-list-tile>
+                            <v-list-tile-action>
+                                <v-checkbox v-model="displayUsers" />
+                            </v-list-tile-action>
+                            <v-list-tile-content>Users</v-list-tile-content>
+                        </v-list-tile>
+                        <v-list-tile>
+                            <v-list-tile-action>
+                                <v-checkbox v-model="displayBoxes" />
+                            </v-list-tile-action>
+                            <v-list-tile-content>Boxes</v-list-tile-content>
+                        </v-list-tile>
+                        <v-list-tile>
+                            <v-list-tile-action>
+                                <v-checkbox v-model="displayHints" />
+                            </v-list-tile-action>
+                            <v-list-tile-content>Hints</v-list-tile-content>
+                        </v-list-tile>
+                        <v-list-tile>
+                            <v-list-tile-action>
+                                <v-checkbox v-model="displayFoundBoxes" />
+                            </v-list-tile-action>
+                            <v-list-tile-content>Found boxes</v-list-tile-content>
+                        </v-list-tile>
+                    </v-list>
+                    <v-list>
+                        <v-list-tile>
+                            <v-list-tile-action>
+                                <v-checkbox v-model="simulateDistances" />
+                            </v-list-tile-action>
+                            <v-list-tile-content>Simulate distances</v-list-tile-content>
+                        </v-list-tile>
+                        <v-list-tile v-for="(item, index) in simulationItems" :key="item.title">
+                            <v-list-tile-content>
+                                {{ index + 1 }}. {{ item.title }} {{ item.distance }} m
+                            </v-list-tile-content>
+                        </v-list-tile>
+                    </v-list>
+                    <v-spacer />
+                    <v-list>
+                        <v-list-tile>
+                            <v-list-tile-content>
+                                <strong>Values in map</strong>
+                            </v-list-tile-content>
+                            <v-list-tile-content>
+                                {{ valuesInMap }}
+                            </v-list-tile-content>
+                        </v-list-tile>
+                    </v-list>
+                </v-layout>
             </v-flex>
             <v-flex xs10>
                 <div id="map" :style="{ height: calculatedHeight + 'px' }">
@@ -42,6 +99,7 @@
 <script>
 import _difference from 'lodash/difference';
 import { EventBus, Events } from '../../events';
+import { geoDistance } from '@/helper/location';
 import { gmapApi } from 'vue2-google-maps';
 const modes = {
     ADD_BOX: 1,
@@ -71,7 +129,17 @@ export default {
             mode: 0,
             mapApi: null,
             boxMarkers: {},
-            objects: {}
+            objects: {},
+            valuesInMap: 0,
+            displayUsers: true,
+            displayBoxes: true,
+            displayHints: true,
+            displayFoundBoxes: true,
+            simulationItems: [],
+            simulateDistances: false,
+            simulationListener: null,
+            boxReferences: [],
+            distancesToPoint: {}
         };
     },
     computed: {
@@ -120,6 +188,7 @@ export default {
         sync () {
             this.center = this.reportedCenter;
             this.zoom = this.reportedZoom;
+            this.updateValuesInMap();
         },
         moveToUserPosition() {
             this.center = this.userPosition;
@@ -158,99 +227,95 @@ export default {
             if (user.id === this.currentUser.uid) {
                 return;
             }
-            if (this.objects[user.id]) {
+            if (this.objects[user.id] && this.objects[user.id].marker) {
                 this.objects[user.id].marker.setMap(null);
             }
-            const newMarker = new this.google.maps.Marker({
-                position: {
-                    lat: user.lastLocation.lat,
-                    lng: user.lastLocation.lng
-                },
-                map: this.mapApi,
-                icon: 'assets/images/icons/user.gif'
-            });
-            newMarker.id = user.id;
-            newMarker.addListener('click', e => {
-                this.mode = modes.VIEW_USER;
-                this.$store.dispatch('drawer/setTitle', 'View user');
-                this.$store.dispatch('drawer/setComponent', 'map-user-drawer');
-                this.$store.dispatch('drawer/setData', Object.assign({}, user, {
-                    viewedUser: user
-                }));
-                EventBus.$emit(Events.SHOW_CONTENT_IN_DRAWER);
-            });
-            user.marker = newMarker;
+            if (this.displayUsers) {
+                const newMarker = new this.google.maps.Marker({
+                    position: {
+                        lat: user.lastLocation.lat,
+                        lng: user.lastLocation.lng
+                    },
+                    map: this.mapApi,
+                    icon: 'assets/images/icons/user.gif'
+                });
+                newMarker.id = user.id;
+                newMarker.addListener('click', e => {
+                    console.log(user);
+                    user.userProfile.get().then(result => {
+                        /* const profileData = result.data();
+                        user.role = profileData.name;
+                        user.permissions = profileData.permissions; */
+                        this.mode = modes.VIEW_USER;
+                        this.$store.dispatch('drawer/setTitle', 'View user');
+                        this.$store.dispatch('drawer/setComponent', 'map-user-drawer');
+                        this.$store.dispatch('drawer/setData', Object.assign({}, user, {
+                            viewedUser: user
+                        }));
+                        EventBus.$emit(Events.SHOW_CONTENT_IN_DRAWER);
+                    });
+                });
+                user.marker = newMarker;
+            }
             this.objects[user.id] = user;
         },
         markBox(box) {
-            if (this.objects[box.id]) {
+            if (this.objects[box.id] && this.objects[box.id].marker) {
                 this.objects[box.id].marker.setMap(null);
             }
-
-            const newMarker = new this.google.maps.Marker({
-                position: {
-                    lat: box.position.lat,
-                    lng: box.position.lng
-                },
-                map: this.mapApi,
-                icon: 'assets/images/icons/logo-klein.gif',
-                label: {
-                    text: box.value.toString(),
-                    fontSize: '32px',
-                    fontWeight: 'bold',
-                    color: '#f1f1f1'
-                }
-            });
-            newMarker.addListener('click', (e) => {
-                const newBox = this.objects[box.id];
-                this.mode = modes.EDIT_BOX;
-                this.$store.dispatch('drawer/setTitle', 'Edit box');
-                this.$store.dispatch('drawer/setComponent', 'map-box-drawer');
-                this.$store.dispatch('box/fetchHintsForBox', newBox.id).then(() => {
-                    this.$store.dispatch('drawer/setData', Object.assign(newBox, {
-                        editBoxMarker: newMarker,
-                        boxHints: this.$store.getters['box/hintsForBox']
-                    }));
+            if (this.displayBoxes) {
+                const newMarker = new this.google.maps.Marker({
+                    position: {
+                        lat: box.position.lat,
+                        lng: box.position.lng
+                    },
+                    map: this.mapApi,
+                    icon: 'assets/images/icons/logo-klein.gif',
+                    label: {
+                        text: box.value.toString(),
+                        fontSize: '32px',
+                        fontWeight: 'bold',
+                        color: '#555555'
+                    }
                 });
-                EventBus.$emit(Events.SHOW_CONTENT_IN_DRAWER);
-            });
-            if (box.marker) {
-                box.marker.setMap(null);
+                newMarker.addListener('click', (e) => {
+                    const newBox = this.objects[box.id];
+                    this.mode = modes.EDIT_BOX;
+                    this.$store.dispatch('drawer/setTitle', 'Edit box');
+                    this.$store.dispatch('drawer/setComponent', 'map-box-drawer');
+                    this.$store.dispatch('box/fetchHintsForBox', newBox.id).then(() => {
+                        this.$store.dispatch('drawer/setData', Object.assign(newBox, {
+                            editBoxMarker: newMarker,
+                            boxHints: this.$store.getters['box/hintsForBox']
+                        }));
+                    });
+                    EventBus.$emit(Events.SHOW_CONTENT_IN_DRAWER);
+                });
+                newMarker.id = box.id;
+                box.marker = newMarker;
             }
-            newMarker.id = box.id;
-            box.marker = newMarker;
             this.objects[box.id] = box;
         },
         markHint(hint) {
-            if (this.objects[hint.id]) {
+            if (this.objects[hint.id] && this.objects[hint.id].marker) {
                 this.objects[hint.id].marker.setMap(null);
             }
-            const newMarker = new this.google.maps.Circle({
-                center: hint.position,
-                radius: hint.distanceRange,
-                fillColor: '#1976d2',
-                strokeWidth: 0,
-                fillOpacity: 0.5,
-                map: this.mapApi
-            });
-            if (hint.marker) {
-                hint.marker.setMap(null);
-            }
-            newMarker.id = hint.id;
-            hint.marker = newMarker;
-            this.objects[hint.id] = hint;
-        },
-        setHintLabels() {
-            this.mapObjects.filter(mapObject => mapObject.objectType === 3).forEach(mapObject => {
-                if (mapObject.forBox && this.objects[mapObject.forBox] && this.objects[mapObject.forBox].marker) {
-                    this.objects[mapObject.forBox].marker.setLabel({
-                        text: mapObject.distanceRange.toString(),
-                        fontSize: '24px',
-                        fontWeight: 'bold',
-                        color: '#fff'
-                    });
+            if (this.displayHints) {
+                const newMarker = new this.google.maps.Circle({
+                    center: hint.position,
+                    radius: hint.distanceRange,
+                    fillColor: '#1976d2',
+                    strokeWidth: 0,
+                    fillOpacity: 0.5,
+                    map: this.mapApi
+                });
+                if (hint.marker) {
+                    hint.marker.setMap(null);
                 }
-            });
+                newMarker.id = hint.id;
+                hint.marker = newMarker;
+            }
+            this.objects[hint.id] = hint;
         },
         updateMapObjects(mapObjects) {
             const objectsInMap = [];
@@ -277,12 +342,36 @@ export default {
                 }
                 delete this.mapObjects[objectId];
             });
+            this.updateValuesInMap();
+        },
+        updateValuesInMap() {
+            const bounds = this.mapApi.getBounds();
+            const value = this.mapObjects
+                .filter(mapObject => mapObject.objectType === mapObjectTypes.BOX)
+                .filter(mapObject => bounds.contains(mapObject.position))
+                .reduce((acc, val) => {
+                    acc += parseInt(val.value);
+                    return acc;
+                }, 0);
+            this.valuesInMap = value;
         },
         updateGeoQuery() {
             this.$store.dispatch('map/updateGeoQuery', {
                 center: this.mapApi.getCenter(),
                 zoom: this.mapApi.getZoom(),
                 bounds: this.mapApi.getBounds()
+            });
+        },
+        sortBoxReferences(point) {
+            this.distancesToPoint = {};
+            this.boxReferences = this.boxReferences.sort((boxA, boxB) => {
+                if (!this.distancesToPoint[boxA.id]) {
+                    this.distancesToPoint[boxA.id] = geoDistance(point, boxA.position);
+                }
+                if (!this.distancesToPoint[boxB.id]) {
+                    this.distancesToPoint[boxB.id] = geoDistance(point, boxB.position);
+                }
+                return this.distancesToPoint[boxA.id] - this.distancesToPoint[boxB.id];
             });
         }
     },
@@ -297,6 +386,38 @@ export default {
         },
         mapObjects(mapObjects) {
             this.updateMapObjects(mapObjects);
+        },
+        displayUsers() {
+            this.updateMapObjects(this.mapObjects);
+        },
+        displayBoxes() {
+            this.updateMapObjects(this.mapObjects);
+        },
+        displayHints() {
+            this.updateMapObjects(this.mapObjects);
+        },
+        displayFoundBoxes() {
+            this.updateMapObjects(this.mapObjects);
+        },
+        simulateDistances(value) {
+            if (value) {
+                let lastBoxSorting = Date.now();
+                const center = this.mapApi.getCenter();
+                this.boxReferences = this.mapObjects.filter(mapObject => mapObject.objectType === mapObjectTypes.BOX);
+                this.sortBoxReferences({ lat: center.lat(), lng: center.lng() });
+                this.simulationItems = this.boxReferences.slice(0, 5);
+                this.simulationListener = this.mapApi.addListener('mousemove', e => {
+                    if (Date.now() - lastBoxSorting > 500) {
+                        lastBoxSorting = Date.now();
+                        this.sortBoxReferences({ lat: e.latLng.lat(), lng: e.latLng.lng() });
+                        this.simulationItems = this.boxReferences.slice(0, 5).map(box => Object.assign({ distance: Math.round(this.distancesToPoint[box.id]) }, box));
+                    }
+                });
+            } else {
+                this.boxReferences = [];
+                this.google.maps.event.removeListener(this.simulationListener);
+                this.simulationItems = [];
+            }
         }
     },
     mounted () {

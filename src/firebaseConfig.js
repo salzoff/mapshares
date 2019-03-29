@@ -20,6 +20,7 @@ const currentUser = auth.currentUser;
 
 // firebase collections
 const userProfileCollection = db.collection('userProfile');
+const userRolesCollection = db.collection('userRoles');
 const boxCollection = db.collection('box');
 
 export {
@@ -28,5 +29,6 @@ export {
     storage,
     currentUser,
     userProfileCollection,
+    userRolesCollection,
     boxCollection
 };

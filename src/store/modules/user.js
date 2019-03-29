@@ -1,5 +1,5 @@
 import firebase from 'firebase';
-import { userProfileCollection } from '@/firebaseConfig';
+import { userProfileCollection, userRolesCollection } from '@/firebaseConfig';
 import { updateUserLocationInGeoLocation } from '../../helper/geofirestore';
 
 const state = {
@@ -57,14 +57,17 @@ const actions = {
         }
         return userProfileCollection.doc(state.currentUser.uid).get().then(response => {
             const data = response.data();
+            /* return data.userRole.get().then(roleResponse => {
+                const roleData = roleResponse.data(); */
             commit('SET_USER_PROFILE', Object.assign(response.data(), {
                 ref: response.ref,
                 lastLocationAt: data.lastLocationAt ? data.lastLocationAt.toDate() : new Date(),
                 createdAt: data.createdAt.toDate(),
-                lastLogin: data.lastLogin.toDate()
+                lastLogin: data.lastLogin.toDate() /* , */
             }));
             commit('SET_FETCHING_INITIAL_USER_PROFILE', false);
         });
+        /* }); */
     },
     clearUserData: ({ commit }) => {
         unsubscribeUserProfileCollection();

@@ -12,7 +12,7 @@ const state = {
     google: null,
     queryCenter: null,
     queryDistance: null,
-    mapObjects: null,
+    mapObjects: [],
     mapQuery: null
 };
 
@@ -75,6 +75,8 @@ const actions = {
                             });
                             switch (entryData.objectType) {
                                 case 1:
+                                    console.log(entryData);
+                                    console.log(newObject);
                                     newObject.lastLocation = {
                                         lat: newObject.lastLocation.latitude,
                                         lng: newObject.lastLocation.longitude

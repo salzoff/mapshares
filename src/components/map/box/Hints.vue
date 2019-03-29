@@ -40,7 +40,7 @@
                                         <template v-if="hint.value.distanceRange === 0">Exact</template>
                                         <template v-else>{{ hint.value.distanceRange }} m</template>
                                     </v-flex>
-                                    <v-flex xs5>{{ formatDate(hint.visibleFrom) }}</v-flex>
+                                    <v-flex xs5 xs4 class="text-xs-right">{{ formatDate(hint.visibleFrom) }}</v-flex>
                                     <v-flex xs3 class="text-xs-right">
                                         <v-btn small icon @click="editBoxHint(hint)"><v-icon>edit</v-icon></v-btn>
                                         <v-btn small icon @click="deleteBoxHint(hint, index)"><v-icon>clear</v-icon></v-btn>
@@ -56,7 +56,7 @@
                                             <span>{{ hint.value.text }}</span>
                                         </v-tooltip>
                                     </v-flex>
-                                    <v-flex xs5>{{ formatDate(hint.visibleFrom) }}</v-flex>
+                                    <v-flex xs5 xs4 class="text-xs-right">{{ formatDate(hint.visibleFrom) }}</v-flex>
                                     <v-flex xs3 class="text-xs-right">
                                         <v-btn small icon @click="editBoxHint(hint)"><v-icon>edit</v-icon></v-btn>
                                         <v-btn small icon @click="deleteBoxHint(hint, index)"><v-icon>clear</v-icon></v-btn>
@@ -64,18 +64,17 @@
                                 </template>
                                 <template v-else-if="hint.type === hintTypeImage">
                                     <v-flex xs2>Image</v-flex>
-                                    <v-flex xs2>
-                                        <span
-                                            class="hint-text hover-image"
-                                            @mouseenter="enlargeImage = true"
-                                            @mouseleave="enlargeImage = false"
-                                        >
-                                            {{ hint.fileName }}
-                                            <transition name="image-large">
-                                                <!--img class="hover-image-large" v-if="enlargeImage" :src="createImageUrl(hint)"-->
-                                            </transition>
-                                        </span></v-flex>
-                                    <v-flex xs5>{{ formatDate(hint.visibleFrom) }}</v-flex>
+                                    <v-flex xs3 @click="showImage(hint)">
+                                        <v-tooltip bottom>
+                                            <template v-slot:activator="{ on }">
+                                                <span class="hint-image" v-on="on">{{ hint.fileName }}</span>
+                                            </template>
+                                            <span>{{ hint.fileName }}</span>
+                                        </v-tooltip>
+                                        <v-btn icon small><v-icon>zoom_in</v-icon></v-btn>
+                                        <light-box :images="hintLightBoxImages" ref="hintLightBox" />
+                                    </v-flex>
+                                    <v-flex xs4 class="text-xs-right">{{ formatDate(hint.visibleFrom) }}</v-flex>
                                     <v-flex xs3 class="text-xs-right">
                                         <v-btn small icon @click="editBoxHint(hint)"><v-icon>edit</v-icon></v-btn>
                                         <v-btn small icon @click="deleteBoxHint(hint, index)"><v-icon>clear</v-icon></v-btn>
@@ -268,6 +267,7 @@
 import { getRandomPointWithinDistance } from '../../../helper/location';
 import { storage } from '@/firebaseConfig';
 import FileInput from '@/components/common/FileInput.vue';
+import LightBox from 'vue-image-lightbox';
 import moment from 'moment';
 const boxHintTypes = {
     LOCATION: 1,
@@ -293,7 +293,7 @@ export default {
             default: () => {}
         }
     },
-    components: { FileInput },
+    components: { FileInput, LightBox },
     computed: {
         hintTypeItems() {
             return [
@@ -344,7 +344,9 @@ export default {
             currentHint: null,
             rangeCircle: null,
             menu: false,
-            enlargeImage: false
+            enlargeImage: false,
+            currentImageUrl: '',
+            hintLightBoxImages: []
         };
     },
     methods: {
@@ -433,6 +435,13 @@ export default {
                     resolve(url);
                 });
             });
+        },
+        showImage(hint) {
+            this.createImageUrl(hint).then(url => {
+                this.hintLightBoxImages = [{ src: url }];
+                console.log(this.$refs.hintLightBox);
+                this.$refs.hintLightBox[0].showImage(0);
+            });
         }
     },
     watch: {
@@ -450,6 +459,12 @@ export default {
                 this.removeOldRangeCircle();
                 if (hint && typeof hint.value.distanceRange !== 'undefined' && hint.value.position) {
                     this.showLocationRange(hint.value.distanceRange, hint.value.position);
+                }
+                this.currentImageUrl = '';
+                if (hint.type === boxHintTypes.IMAGE) {
+                    this.createImageUrl(hint).then(url => {
+                        this.currentImageUrl = url;
+                    });
                 }
             }
         }
@@ -475,6 +490,13 @@ export default {
         text-overflow: ellipsis;
         display: inline-block;
     }
+    .hint-image {
+        max-width: calc(100% - 44px);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: inline-block;
+    }
     .full-width {
         width: 100%;
     }
@@ -483,16 +505,6 @@ export default {
         text-align: center;
         position: relative;
         display: block;
-    }
-
-    .hover-image {
-        width: 100%;
-        height: 100%;
-        display: block;
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        position: relative;
     }
 
     .hover-image-large {

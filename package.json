@@ -17,6 +17,8 @@
     "material-design-icons-iconfont": "^4.0.5",
     "moment": "^2.24.0",
     "vue": "^2.6.9",
+    "vue-image-lightbox": "^6.1.2",
+    "vue-lazyload": "^1.2.6",
     "vue-router": "^3.0.1",
     "vue2-google-maps": "^0.10.6",
     "vuelidate": "^0.7.4",
