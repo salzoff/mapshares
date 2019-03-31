@@ -6,7 +6,7 @@ const geoFirestore = new GeoFirestore(firestore);
 const geoCollection = geoFirestore.collection('geoLocation');
 
 const updateUserLocationInGeoLocation = (user) => {
-    console.log('updateUser', user);
+    console.trace('updateUserLocation', user);
     return new Promise((resolve, reject) => {
         return geoCollection.doc(user.id).set({
             coordinates: user.lastLocation,
@@ -29,9 +29,11 @@ const updateBoxInGeoLocation = boxRef => {
     return new Promise((resolve, reject) => {
         boxRef.get().then(box => {
             const data = box.data();
+            console.log(data);
             return geoCollection.doc(boxRef.id).set({
                 coordinates: data.position,
-                objectType: 2,
+                objectType: data.foundBy ? 4 : 2,
+                foundBy: data.foundBy,
                 ref: boxRef
             }).then(() => {
                 resolve();

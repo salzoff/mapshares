@@ -44,7 +44,7 @@ export default {
             }
         },
         formData() {
-            return _pick(this.data, ['title', 'description', 'value', 'image', 'imageName', 'id']);
+            return _pick(this.data, ['title', 'description', 'value', 'image', 'imageName', 'id', 'foundAt', 'foundByUser']);
         },
         boxMarker: {
             get() {
@@ -102,7 +102,12 @@ export default {
             });
         },
         markAsFound() {
-            console.log('found');
+            const newBox = Object.assign({}, this.data);
+            delete newBox.boxMarker;
+            newBox.foundBy = this.currentUserProfile.ref;
+            newBox.foundAt = new Date();
+            this.$store.dispatch('box/updateBox', newBox);
+            console.log(this.currentUserProfile.ref);
         },
         saveBoxHints() {
             if (this.currentHint) {

@@ -9,8 +9,8 @@ const mutations = {
         state.title = payload;
     },
     SET_DATA (state, payload) {
-        const data = Object.assign({}, state.data, payload);
-        state.data = data;
+        console.log('drawer mutation', payload);
+        state.data = payload;
     },
     CLEAR_DATA (state) {
         state.data = {};
@@ -24,8 +24,16 @@ const actions = {
     setTitle ({ commit }, payload) {
         commit('SET_TITLE', payload);
     },
-    setData ({ commit }, payload) {
-        commit('SET_DATA', payload);
+    setData ({ commit, state }, payload) {
+        console.log('payload', payload);
+        const newData = Object.assign({}, state.data, payload);
+        Object.keys(payload).forEach(key => {
+            if (payload[key] === null || typeof payload[key] === 'undefined') {
+                delete newData[key];
+            }
+        });
+        console.log('newData', newData);
+        commit('SET_DATA', newData);
     },
     clearData ({ commit }) {
         commit('CLEAR_DATA');

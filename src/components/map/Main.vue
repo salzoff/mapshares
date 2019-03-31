@@ -110,7 +110,8 @@ const modes = {
 const mapObjectTypes = {
     USER: 1,
     BOX: 2,
-    HINT: 3
+    HINT: 3,
+    FOUND_BOX: 4
 };
 export default {
     name: 'map-main',
@@ -243,11 +244,9 @@ export default {
                 newMarker.id = user.id;
                 newMarker.addListener('click', e => {
                     console.log(user);
-                    db.doc(user.userRole).get().then(result => {
+                    user.userRole.get().then(result => {
                         const roleData = result.data();
-                        console.log(roleData);
                         user.role = roleData.name;
-                        user.permissions = roleData.permissions;
                         this.mode = modes.VIEW_USER;
                         this.$store.dispatch('drawer/setTitle', 'View user');
                         this.$store.dispatch('drawer/setComponent', 'map-user-drawer');
@@ -281,17 +280,60 @@ export default {
                     }
                 });
                 newMarker.addListener('click', (e) => {
-                    const newBox = this.objects[box.id];
+                    const newBox = Object.assign({}, this.objects[box.id]);
+                    console.log('boxClick', box);
                     this.mode = modes.EDIT_BOX;
                     this.$store.dispatch('drawer/setTitle', 'Edit box');
                     this.$store.dispatch('drawer/setComponent', 'map-box-drawer');
                     this.$store.dispatch('box/fetchHintsForBox', newBox.id).then(() => {
-                        this.$store.dispatch('drawer/setData', Object.assign(newBox, {
-                            editBoxMarker: newMarker,
-                            boxHints: this.$store.getters['box/hintsForBox']
-                        }));
+                        newBox.editBoxMarker = newMarker;
+                        newBox.boxHints = this.$store.getters['box/hintsForBox'];
+                        newBox.foundBy = null;
+                        newBox.foundAt = null;
+                        newBox.foundByUser = null;
+                        console.log('listener newBox');
+                        console.table(newBox);
+                        this.$store.dispatch('drawer/setData', newBox);
+                        EventBus.$emit(Events.SHOW_CONTENT_IN_DRAWER);
                     });
-                    EventBus.$emit(Events.SHOW_CONTENT_IN_DRAWER);
+                });
+                newMarker.id = box.id;
+                box.marker = newMarker;
+            }
+            this.objects[box.id] = box;
+        },
+        markFoundBox(box) {
+            console.log(box);
+            if (this.objects[box.id] && this.objects[box.id].marker) {
+                this.objects[box.id].marker.setMap(null);
+            }
+            if (this.displayFoundBoxes) {
+                const newMarker = new this.google.maps.Marker({
+                    position: {
+                        lat: box.position.lat,
+                        lng: box.position.lng
+                    },
+                    map: this.mapApi,
+                    icon: 'assets/images/icons/logo-found-klein.gif'
+                });
+                newMarker.addListener('click', (e) => {
+                    const newBox = this.objects[box.id];
+                    console.log('boxClick', box);
+                    this.mode = modes.EDIT_BOX;
+                    this.$store.dispatch('drawer/setTitle', 'View box');
+                    this.$store.dispatch('drawer/setComponent', 'map-box-drawer');
+                    this.$store.dispatch('box/fetchHintsForBox', newBox.id).then(() => {
+                        newBox.editBoxMarker = newMarker;
+                        newBox.boxHints = this.$store.getters['box/hintsForBox'];
+                        newBox.foundBy = newBox.foundBy ? newBox.foundBy : null;
+                        newBox.foundAt = newBox.foundAt ? newBox.foundAt : null;
+                        newBox.foundBy.get().then(foundBy => {
+                            console.log('foundBy', foundBy.data());
+                            newBox.foundByUser = foundBy.data().username;
+                            this.$store.dispatch('drawer/setData', newBox);
+                            EventBus.$emit(Events.SHOW_CONTENT_IN_DRAWER);
+                        });
+                    });
                 });
                 newMarker.id = box.id;
                 box.marker = newMarker;
@@ -332,6 +374,9 @@ export default {
                         break;
                     case mapObjectTypes.HINT:
                         this.markHint(mapObject);
+                        break;
+                    case mapObjectTypes.FOUND_BOX:
+                        this.markFoundBox(mapObject);
                         break;
                     default:
                         break;

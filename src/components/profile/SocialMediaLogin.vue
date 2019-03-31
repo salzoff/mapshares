@@ -47,11 +47,12 @@ export default {
                     const profile = {
                         username: userInfo.user.displayName,
                         email: userInfo.user.email,
-                        imageUrl: userInfo.user.photoURL,
-                        lastLogin: new Date(),
-                        createdAt: new Date()
+                        imageUrl: userInfo.user.photoURL
                     };
-                    this.$store.dispatch('user/updateUserProfile', profile).then(() => {
+                    this.$store.dispatch('user/createUserProfile', {
+                        id: userInfo.user.uid,
+                        profile: profile
+                    }).then(() => {
                         this.$store.dispatch('user/fetchUserProfile').then(() => {
                             this.$router.push('/profile');
                         });

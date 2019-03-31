@@ -92,7 +92,7 @@ export default {
             });
         },
         updateImageUrl() {
-            if (this.profile.imageUrl.startsWith(('http'))) {
+            if (!this.profile.imageUrl || this.profile.imageUrl.startsWith(('http'))) {
                 this.imageUrl = this.profile.imageUrl;
                 return;
             }

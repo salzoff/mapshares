@@ -37,21 +37,26 @@ export default {
     },
     methods: {
         saveProfile() {
+            this.profile.lastLogin = new Date();
             if (!this.isAuthenticated) {
                 auth.createUserWithEmailAndPassword(this.profile.email, this.profile.password)
                     .then((userInfo) => {
                         this.$store.dispatch('user/setCurrentUser', userInfo.user);
-                        this.$store.dispatch('user/fetchUserProfile').then(() => {
-                            this.profile.lastLogin = new Date();
-                            this.updateProfile();
+                        this.$store.dispatch('user/createUserProfile', {
+                            id: userInfo.user.uid,
+                            profile: this.profile
+                        }).then(() => {
+                            this.$store.dispatch('user/fetchUserProfile').then(() => {
+                                this.$router.push('/profile');
+                            });
                         });
                     })
                     .catch(e => {
                         console.log(e);
                     });
-                return;
+            } else {
+                this.updateProfile();
             }
-            this.updateProfile();
         },
         updateProfile() {
             this.$store.dispatch('user/updateUserProfile', this.profile);

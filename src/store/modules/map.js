@@ -98,6 +98,12 @@ const actions = {
                                     };
                                     newObject.forBox = entryData.forBox;
                                     break;
+                                case 4:
+                                    newObject.position = {
+                                        lat: newObject.position.latitude,
+                                        lng: newObject.position.longitude
+                                    };
+                                    break;
                             }
                             mapObjects.push(newObject);
                         } catch (e) {

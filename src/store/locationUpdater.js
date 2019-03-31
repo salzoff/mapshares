@@ -9,6 +9,9 @@ const startLocationUpdater = (store) => {
                 });
             }
         }, 120000);
+        navigator.geolocation.getCurrentPosition(position => {
+            store.dispatch('user/updateUserPosition', { lat: position.coords.latitude, lng: position.coords.longitude });
+        });
     }
 };
 

@@ -52,7 +52,7 @@ const actions = {
     fetchBoxes: ({ state, rootState, dispatch }) => {
         dispatch('fetchBoxesInMap');
         dispatch('fetchBoxesCreatedByUser');
-        dispatch('fetchBoxesFoundByUser');
+        // dispatch('fetchBoxesFoundByUser');
     },
     fetchBoxesInMap: ({ state, commit }, payload) => {
         unsubscribeBoxesInMap = boxCollection.onSnapshot(result => {
@@ -65,7 +65,7 @@ const actions = {
         });
     },
     fetchBoxesFoundByUser: ({ state, rootState, commit }) => {
-        unsubscribeBoxesFoundByUser = boxCollection.where('FoundBy', '==', rootState.user.currentUser.uid).onSnapshot(result => {
+        unsubscribeBoxesFoundByUser = boxCollection.where('FoundBy', '==', rootState.user.currentUserProfile.ref).onSnapshot(result => {
             commit('SET_BOXES_CREATED_BY_USER', result.docs.map(mergeSnapshotDataWithId));
         });
     },
@@ -177,7 +177,7 @@ const actions = {
     clearData: ({ commit }) => {
         unsubscribeBoxesInMap();
         unsubscribeBoxesCreatedByUser();
-        unsubscribeBoxesFoundByUser();
+        // unsubscribeBoxesFoundByUser();
         unsubscribeHintsForBox();
         commit('CLEAR_DATA');
     }

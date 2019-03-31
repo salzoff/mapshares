@@ -43,7 +43,7 @@ const actions = {
         if (state.userProfile.lastLocation) {
             updateUserLocationInGeoLocation(Object.assign(state.userProfile, { id: state.currentUser.uid }));
         }
-        return userProfileCollection.doc(state.currentUser.uid).set(userProfile);
+        return userProfileCollection.doc(state.currentUser.uid).update(userProfile);
     },
     updateUserPosition: ({ dispatch }, payload) => {
         dispatch('updateUserProfile', {
@@ -57,19 +57,33 @@ const actions = {
         }
         return userProfileCollection.doc(state.currentUser.uid).get().then(response => {
             const data = response.data();
-            return data.userRole.get().then(roleResponse => {
-                const roleData = roleResponse.data();
-                commit('SET_USER_PROFILE', Object.assign(response.data(), {
-                    ref: response.ref,
-                    lastLocationAt: data.lastLocationAt ? data.lastLocationAt.toDate() : new Date(),
-                    createdAt: data.createdAt.toDate(),
-                    lastLogin: data.lastLogin.toDate(),
-                    role: roleData.name,
-                    permissions: roleData.permissions
-                }));
+            if (data && data.userRole) {
+                return data.userRole.get().then(roleResponse => {
+                    const roleData = roleResponse.data();
+                    console.log(roleData);
+                    commit('SET_USER_PROFILE', Object.assign(data, {
+                        ref: response.ref,
+                        lastLocationAt: data.lastLocationAt ? data.lastLocationAt.toDate() : new Date(),
+                        role: roleData.name,
+                        permissions: roleData.permissions,
+                        createdAt: data.createdAt.toDate(),
+                        lastLogin: data.lastLogin.toDate()
+
+                    }));
+                    commit('SET_FETCHING_INITIAL_USER_PROFILE', false);
+                });
+            } else {
                 commit('SET_FETCHING_INITIAL_USER_PROFILE', false);
-            });
+            }
         });
+    },
+    createUserProfile: ({ state }, payload) => {
+        console.log('createUserProfile', payload);
+        delete payload.profile.password;
+        payload.profile.userRole = userRolesCollection.doc('0c5dcOJ5B8fLrcPVJ2fS');
+        payload.profile.createdAt = new Date();
+        payload.profile.lastLogin = new Date();
+        return userProfileCollection.doc(payload.id).set(payload.profile);
     },
     clearUserData: ({ commit }) => {
         unsubscribeUserProfileCollection();
