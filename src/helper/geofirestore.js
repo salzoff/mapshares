@@ -14,7 +14,6 @@ const updateUserLocationInGeoLocation = (user) => {
             ref: user.ref
         })
             .then(() => {
-                console.log('success');
                 resolve();
             })
             .catch(e => {

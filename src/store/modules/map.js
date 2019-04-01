@@ -38,9 +38,7 @@ let unbindGeoQueryListener;
 
 const actions = {
     updateGeoQuery: ({ commit, state }, payload) => {
-        console.log('update Geoquery');
         if (Date.now() - queryTimestamp > 2000) {
-            console.log('check distance');
             let queryDistance;
             let distanceFromQueryCenter;
             let computedDistance;
@@ -50,7 +48,6 @@ const actions = {
                     return;
                 }
             }
-            console.log('do update');
             queryDistance = state.google.maps.geometry.spherical.computeDistanceBetween(payload.bounds.getNorthEast(), payload.bounds.getSouthWest()) / 2;
             computedDistance = queryDistance * (payload.zoom * 0.5);
             if (unbindGeoQueryListener) {
@@ -74,8 +71,6 @@ const actions = {
                             });
                             switch (entryData.objectType) {
                                 case 1:
-                                    console.log(entryData);
-                                    console.log(newObject);
                                     newObject.lastLocation = {
                                         lat: newObject.lastLocation.latitude,
                                         lng: newObject.lastLocation.longitude
