@@ -99,12 +99,21 @@ const actions = {
                                     };
                                     break;
                             }
+                            /* const objectData = objectEntry.data();
+                            const newObject = Object.assign({}, entryData);
+                            console.log(objectEntry);
+                            newObject.position = {
+                                lat: objectData.position ? objectData.position.latitude : objectData.lastLocation.latitude,
+                                lng: objectData.position ? objectData.position.longitude : objectData.lastLocation.longitude
+                            };
+                            newObject.value = 0;
+                            console.log('newObject', newObject); */
                             mapObjects.push(newObject);
                         } catch (e) {
                             console.log(e.stack, entry.id);
                         }
                     });
-                })).then(objectEntries => {
+                })).then(() => {
                     commit('SET_MAP_OBJECTS', mapObjects);
                 });
             });
