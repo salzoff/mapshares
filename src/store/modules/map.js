@@ -65,11 +65,12 @@ const actions = {
                 const mapObjects = [];
                 return Promise.all(result.docs.map(entry => {
                     const entryData = entry.data();
-                    return entry.data().ref.get().then(objectEntry => {
+                    return entryData.ref.get().then(objectEntry => {
                         try {
                             const newObject = Object.assign(objectEntry.data(), {
                                 objectType: entryData.objectType,
-                                id: objectEntry.id
+                                id: objectEntry.id,
+                                ref: entryData.ref
                             });
                             switch (entryData.objectType) {
                                 case 1:

@@ -73,21 +73,21 @@
             <v-flex xs10>
                 <div id="map" :style="{ height: calculatedHeight + 'px' }">
                     <gmap-map
-                        :center="center"
-                        @center_changed="updateCenter"
-                        @zoom_changed="updateZoom"
-                        @idle="sync"
-                        @init="updateGeoQuery"
-                        :zoom="zoom"
-                        style="width: 100%; height: 100%"
-                        @click="handleMapClick"
-                        ref="mapRef"
+                            :center="center"
+                            @center_changed="updateCenter"
+                            @zoom_changed="updateZoom"
+                            @idle="sync"
+                            @init="updateGeoQuery"
+                            :zoom="zoom"
+                            style="width: 100%; height: 100%"
+                            @click="handleMapClick"
+                            ref="mapRef"
                     >
                         <gmap-marker
-                            v-if="!isFetchingInitialUserProfile"
-                            :position="userPosition"
-                            :clickable="true"
-                            :draggable="true"
+                                v-if="!isFetchingInitialUserProfile"
+                                :position="userPosition"
+                                :clickable="true"
+                                :draggable="true"
                         />
                     </gmap-map>
                 </div>
@@ -237,10 +237,7 @@ export default {
             }
             if (this.displayUsers && this.hasPermission(permissions.SHOW_USER)) {
                 const newMarker = new this.google.maps.Marker({
-                    position: {
-                        lat: user.lastLocation.lat,
-                        lng: user.lastLocation.lng
-                    },
+                    position: user.position,
                     map: this.mapApi,
                     icon: 'assets/images/icons/user.gif'
                 });
@@ -263,15 +260,12 @@ export default {
             this.objects[user.id] = user;
         },
         markBox(box) {
-            if (this.objects[box.id] && this.objects[box.id].marker) {
-                this.objects[box.id].marker.setMap(null);
+            if (this.objects[box.ref.id] && this.objects[box.ref.id].marker) {
+                this.objects[box.ref.id].marker.setMap(null);
             }
             if (this.displayBoxes && this.hasPermission(permissions.SHOW_BOX_LOCATION)) {
                 const newMarker = new this.google.maps.Marker({
-                    position: {
-                        lat: box.position.lat,
-                        lng: box.position.lng
-                    },
+                    position: box.position,
                     map: this.mapApi,
                     icon: 'assets/images/icons/logo-klein.gif',
                     label: {
@@ -284,10 +278,10 @@ export default {
                 newMarker.addListener('click', (e) => {
                     this.showBoxInDrawer(box, newMarker);
                 });
-                newMarker.id = box.id;
+                newMarker.id = box.ref.id;
                 box.marker = newMarker;
             }
-            this.objects[box.id] = box;
+            this.objects[box.ref.id] = box;
         },
         markFoundBox(box) {
             if (this.objects[box.id] && this.objects[box.id].marker) {
@@ -295,10 +289,7 @@ export default {
             }
             if (this.displayFoundBoxes && this.hasPermission(permissions.SHOW_FOUND_BOX)) {
                 const newMarker = new this.google.maps.Marker({
-                    position: {
-                        lat: box.position.lat,
-                        lng: box.position.lng
-                    },
+                    position: box.position,
                     map: this.mapApi,
                     icon: 'assets/images/icons/logo-found-klein.gif'
                 });
@@ -349,7 +340,6 @@ export default {
             this.objects[hint.id] = hint;
         },
         updateMapObjects(mapObjects) {
-            console.log('updateMapObjects', mapObjects);
             const objectsInMap = [];
             mapObjects.forEach(mapObject => {
                 objectsInMap.push(mapObject.id);
