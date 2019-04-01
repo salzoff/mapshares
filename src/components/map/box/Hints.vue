@@ -42,8 +42,8 @@
                                     </v-flex>
                                     <v-flex xs5 xs4 class="text-xs-right">{{ formatDate(hint.visibleFrom) }}</v-flex>
                                     <v-flex xs3 class="text-xs-right">
-                                        <v-btn small icon @click="editBoxHint(hint)"><v-icon>edit</v-icon></v-btn>
-                                        <v-btn small icon @click="deleteBoxHint(hint, index)"><v-icon>clear</v-icon></v-btn>
+                                        <v-btn v-if="hasPermission(permissionsEnum.EDIT_HINT)" small icon @click="editBoxHint(hint)"><v-icon>edit</v-icon></v-btn>
+                                        <v-btn v-if="hasPermission(permissionsEnum.DELETE_HINT)" small icon @click="deleteBoxHint(hint, index)"><v-icon>clear</v-icon></v-btn>
                                     </v-flex>
                                 </template>
                                 <template v-else-if="hint.type === hintTypeText">
@@ -58,8 +58,8 @@
                                     </v-flex>
                                     <v-flex xs5 xs4 class="text-xs-right">{{ formatDate(hint.visibleFrom) }}</v-flex>
                                     <v-flex xs3 class="text-xs-right">
-                                        <v-btn small icon @click="editBoxHint(hint)"><v-icon>edit</v-icon></v-btn>
-                                        <v-btn small icon @click="deleteBoxHint(hint, index)"><v-icon>clear</v-icon></v-btn>
+                                        <v-btn v-if="hasPermission(permissionsEnum.EDIT_HINT)" small icon @click="editBoxHint(hint)"><v-icon>edit</v-icon></v-btn>
+                                        <v-btn v-if="hasPermission(permissionsEnum.DELETE_HINT)" small icon @click="deleteBoxHint(hint, index)"><v-icon>clear</v-icon></v-btn>
                                     </v-flex>
                                 </template>
                                 <template v-else-if="hint.type === hintTypeImage">
@@ -76,8 +76,8 @@
                                     </v-flex>
                                     <v-flex xs4 class="text-xs-right">{{ formatDate(hint.visibleFrom) }}</v-flex>
                                     <v-flex xs3 class="text-xs-right">
-                                        <v-btn small icon @click="editBoxHint(hint)"><v-icon>edit</v-icon></v-btn>
-                                        <v-btn small icon @click="deleteBoxHint(hint, index)"><v-icon>clear</v-icon></v-btn>
+                                        <v-btn v-if="hasPermission(permissionsEnum.EDIT_HINT)" small icon @click="editBoxHint(hint)"><v-icon>edit</v-icon></v-btn>
+                                        <v-btn v-if="hasPermission(permissionsEnum.DELETE_HINT)" small icon @click="deleteBoxHint(hint, index)"><v-icon>clear</v-icon></v-btn>
                                     </v-flex>
                                 </template>
                             </v-layout>
@@ -241,7 +241,7 @@
                             </template>
                         </v-card-text>
                         <v-btn
-                            v-if="index === boxHints.length - 1"
+                            v-if="index === boxHints.length - 1 && hasPermission(permissionsEnum.ADD_HINT)"
                             color="primary"
                             @click="addBoxHint"
                             small
@@ -258,13 +258,14 @@
             </v-layout>
         </template>
         <v-layout row class="mt-2">
-            <v-btn color="primary" @click="saveBoxHints" class="ml-0" :disabled="!$v.$anyDirty  || $v.$anyError || (currentHint && currentHint.editMode)">Save hints</v-btn>
+            <v-btn v-if="hasPermission(permissionsEnum.ADD_HINT) || hasPermission(permissionsEnum.EDIT_HINT)" color="primary" @click="saveBoxHints" class="ml-0" :disabled="!$v.$anyDirty  || $v.$anyError || (currentHint && currentHint.editMode)">Save hints</v-btn>
         </v-layout>
     </div>
 </template>
 
 <script>
-import { getRandomPointWithinDistance } from '../../../helper/location';
+import { getRandomPointWithinDistance } from '@/helper/location';
+import { permissions } from '@/helper/enums';
 import { storage } from '@/firebaseConfig';
 import FileInput from '@/components/common/FileInput.vue';
 import LightBox from 'vue-image-lightbox';
@@ -336,6 +337,9 @@ export default {
                 { text: '2000 m', value: 2000 },
                 { text: '3000 m', value: 3000 }
             ];
+        },
+        permissionsEnum() {
+            return permissions;
         }
     },
     data() {

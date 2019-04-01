@@ -6,7 +6,6 @@ const geoFirestore = new GeoFirestore(firestore);
 const geoCollection = geoFirestore.collection('geoLocation');
 
 const updateUserLocationInGeoLocation = (user) => {
-    console.trace('updateUserLocation', user);
     return new Promise((resolve, reject) => {
         return geoCollection.doc(user.id).set({
             coordinates: user.lastLocation,
@@ -25,7 +24,6 @@ const updateUserLocationInGeoLocation = (user) => {
 };
 
 const updateBoxInGeoLocation = boxRef => {
-    console.log('update ox', boxRef);
     return new Promise((resolve, reject) => {
         boxRef.get().then(box => {
             const data = box.data();
@@ -48,7 +46,6 @@ const updateBoxHintsInGeoLocation = boxId => {
     const boxDocument = firestore.collection('box').doc(boxId);
     const hintCollection = boxDocument.collection('hints').where('type', '==', 1).orderBy('visibleFrom');
     let now = Date.now();
-    console.log(hintCollection);
     hintCollection.get().then(hints => {
         let currentHint = null;
         let nextHint = null;
@@ -66,15 +63,11 @@ const updateBoxHintsInGeoLocation = boxId => {
                 }
             }));
         });
-        console.log(previousHint ? previousHint.id : 'Null');
-        console.log(currentHint.id);
         Promise.all(promises).then(function() {
             if (previousHint && previousHint.id === currentHint.id + 'hint') {
                 return;
             }
             if (currentHint) {
-                console.log(currentHint);
-                console.log(previousHint);
                 const data = currentHint.data();
                 const newHint = {
                     coordinates: data.position,

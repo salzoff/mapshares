@@ -114,7 +114,6 @@ const actions = {
                 createdBoxes: firebase.firestore.FieldValue.arrayUnion(boxRef)
             });
             console.log(boxRef);
-            updateBoxInGeoLocation(boxRef);
             return boxRef;
         });
     },
@@ -175,10 +174,18 @@ const actions = {
         });
     },
     clearData: ({ commit }) => {
-        unsubscribeBoxesInMap();
-        unsubscribeBoxesCreatedByUser();
-        // unsubscribeBoxesFoundByUser();
-        unsubscribeHintsForBox();
+        if (unsubscribeBoxesInMap) {
+            unsubscribeBoxesInMap();
+        }
+        if (unsubscribeBoxesCreatedByUser) {
+            unsubscribeBoxesCreatedByUser();
+        }
+        if (unsubscribeBoxesFoundByUser) {
+            unsubscribeBoxesFoundByUser();
+        }
+        if (unsubscribeHintsForBox) {
+            unsubscribeHintsForBox();
+        }
         commit('CLEAR_DATA');
     }
 };

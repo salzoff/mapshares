@@ -19,25 +19,25 @@
                                 <span class="subheading">Display</span>
                             </v-list-tile-content>
                         </v-list-tile>
-                        <v-list-tile>
+                        <v-list-tile v-if="hasPermission(permissionEnum.SHOW_USER)">
                             <v-list-tile-action>
                                 <v-checkbox v-model="displayUsers" />
                             </v-list-tile-action>
                             <v-list-tile-content>Users</v-list-tile-content>
                         </v-list-tile>
-                        <v-list-tile>
+                        <v-list-tile v-if="hasPermission(permissionEnum.SHOW_BOX_LOCATION)">
                             <v-list-tile-action>
                                 <v-checkbox v-model="displayBoxes" />
                             </v-list-tile-action>
                             <v-list-tile-content>Boxes</v-list-tile-content>
                         </v-list-tile>
-                        <v-list-tile>
+                        <v-list-tile v-if="hasPermission(permissionEnum.SHOW_HINT)">
                             <v-list-tile-action>
                                 <v-checkbox v-model="displayHints" />
                             </v-list-tile-action>
                             <v-list-tile-content>Hints</v-list-tile-content>
                         </v-list-tile>
-                        <v-list-tile>
+                        <v-list-tile v-if="hasPermission(permissionEnum.SHOW_FOUND_BOX)">
                             <v-list-tile-action>
                                 <v-checkbox v-model="displayFoundBoxes" />
                             </v-list-tile-action>
@@ -100,7 +100,7 @@
 import _difference from 'lodash/difference';
 import { EventBus, Events } from '../../events';
 import { geoDistance } from '@/helper/location';
-import { db } from '@/firebaseConfig';
+import { permissions } from '@/helper/enums';
 import { gmapApi } from 'vue2-google-maps';
 const modes = {
     ADD_BOX: 1,
@@ -165,6 +165,9 @@ export default {
         },
         mapObjects() {
             return this.$store.getters['map/mapObjects'];
+        },
+        permissionEnum() {
+            return permissions;
         }
     },
     methods: {
@@ -232,7 +235,7 @@ export default {
             if (this.objects[user.id] && this.objects[user.id].marker) {
                 this.objects[user.id].marker.setMap(null);
             }
-            if (this.displayUsers) {
+            if (this.displayUsers && this.hasPermission(permissions.SHOW_USER)) {
                 const newMarker = new this.google.maps.Marker({
                     position: {
                         lat: user.lastLocation.lat,
@@ -243,7 +246,6 @@ export default {
                 });
                 newMarker.id = user.id;
                 newMarker.addListener('click', e => {
-                    console.log(user);
                     user.userRole.get().then(result => {
                         const roleData = result.data();
                         user.role = roleData.name;
@@ -264,7 +266,7 @@ export default {
             if (this.objects[box.id] && this.objects[box.id].marker) {
                 this.objects[box.id].marker.setMap(null);
             }
-            if (this.displayBoxes) {
+            if (this.displayBoxes && this.hasPermission(permissions.SHOW_BOX_LOCATION)) {
                 const newMarker = new this.google.maps.Marker({
                     position: {
                         lat: box.position.lat,
@@ -280,22 +282,7 @@ export default {
                     }
                 });
                 newMarker.addListener('click', (e) => {
-                    const newBox = Object.assign({}, this.objects[box.id]);
-                    console.log('boxClick', box);
-                    this.mode = modes.EDIT_BOX;
-                    this.$store.dispatch('drawer/setTitle', 'Edit box');
-                    this.$store.dispatch('drawer/setComponent', 'map-box-drawer');
-                    this.$store.dispatch('box/fetchHintsForBox', newBox.id).then(() => {
-                        newBox.editBoxMarker = newMarker;
-                        newBox.boxHints = this.$store.getters['box/hintsForBox'];
-                        newBox.foundBy = null;
-                        newBox.foundAt = null;
-                        newBox.foundByUser = null;
-                        console.log('listener newBox');
-                        console.table(newBox);
-                        this.$store.dispatch('drawer/setData', newBox);
-                        EventBus.$emit(Events.SHOW_CONTENT_IN_DRAWER);
-                    });
+                    this.showBoxInDrawer(box, newMarker);
                 });
                 newMarker.id = box.id;
                 box.marker = newMarker;
@@ -303,11 +290,10 @@ export default {
             this.objects[box.id] = box;
         },
         markFoundBox(box) {
-            console.log(box);
             if (this.objects[box.id] && this.objects[box.id].marker) {
                 this.objects[box.id].marker.setMap(null);
             }
-            if (this.displayFoundBoxes) {
+            if (this.displayFoundBoxes && this.hasPermission(permissions.SHOW_FOUND_BOX)) {
                 const newMarker = new this.google.maps.Marker({
                     position: {
                         lat: box.position.lat,
@@ -318,7 +304,6 @@ export default {
                 });
                 newMarker.addListener('click', (e) => {
                     const newBox = this.objects[box.id];
-                    console.log('boxClick', box);
                     this.mode = modes.EDIT_BOX;
                     this.$store.dispatch('drawer/setTitle', 'View box');
                     this.$store.dispatch('drawer/setComponent', 'map-box-drawer');
@@ -328,7 +313,6 @@ export default {
                         newBox.foundBy = newBox.foundBy ? newBox.foundBy : null;
                         newBox.foundAt = newBox.foundAt ? newBox.foundAt : null;
                         newBox.foundBy.get().then(foundBy => {
-                            console.log('foundBy', foundBy.data());
                             newBox.foundByUser = foundBy.data().username;
                             this.$store.dispatch('drawer/setData', newBox);
                             EventBus.$emit(Events.SHOW_CONTENT_IN_DRAWER);
@@ -344,7 +328,7 @@ export default {
             if (this.objects[hint.id] && this.objects[hint.id].marker) {
                 this.objects[hint.id].marker.setMap(null);
             }
-            if (this.displayHints) {
+            if (this.displayHints && this.hasPermission(permissions.SHOW_HINT)) {
                 const newMarker = new this.google.maps.Circle({
                     center: hint.position,
                     radius: hint.distanceRange,
@@ -352,6 +336,9 @@ export default {
                     strokeWidth: 0,
                     fillOpacity: 0.5,
                     map: this.mapApi
+                });
+                newMarker.addListener('click', () => {
+                    this.showBoxInDrawer(this.objects[hint.forBox]);
                 });
                 if (hint.marker) {
                     hint.marker.setMap(null);
@@ -362,6 +349,7 @@ export default {
             this.objects[hint.id] = hint;
         },
         updateMapObjects(mapObjects) {
+            console.log('updateMapObjects', mapObjects);
             const objectsInMap = [];
             mapObjects.forEach(mapObject => {
                 objectsInMap.push(mapObject.id);
@@ -390,6 +378,25 @@ export default {
                 delete this.mapObjects[objectId];
             });
             this.updateValuesInMap();
+        },
+        showBoxInDrawer(box, marker = null) {
+            if (this.hasPermission(permissions.SHOW_BOX)) {
+                const newBox = Object.assign({}, this.objects[box.id]);
+                this.mode = modes.EDIT_BOX;
+                this.$store.dispatch('drawer/setTitle', 'Edit box');
+                this.$store.dispatch('drawer/setComponent', 'map-box-drawer');
+                this.$store.dispatch('box/fetchHintsForBox', newBox.id).then(() => {
+                    if (marker) {
+                        newBox.editBoxMarker = marker;
+                    }
+                    newBox.boxHints = this.$store.getters['box/hintsForBox'];
+                    newBox.foundBy = null;
+                    newBox.foundAt = null;
+                    newBox.foundByUser = null;
+                    this.$store.dispatch('drawer/setData', newBox);
+                    EventBus.$emit(Events.SHOW_CONTENT_IN_DRAWER);
+                });
+            }
         },
         updateValuesInMap() {
             const bounds = this.mapApi.getBounds();

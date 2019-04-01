@@ -11,6 +11,14 @@ export default {
         },
         isFetchingInitialUserProfile() {
             return this.$store.getters['user/isFetchingInitialUserProfile'];
+        },
+        permissions() {
+            return this.currentUserProfile.permissions;
+        }
+    },
+    methods: {
+        hasPermission(permission) {
+            return this.permissions ? this.permissions.some(userPermission => userPermission === permission) : false;
         }
     }
 };

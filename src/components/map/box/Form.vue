@@ -4,10 +4,10 @@
         <v-textarea v-model="values.description" label="Description"  @input="onInput" />
         <v-text-field v-model="values.value" type="number" label="Value" :error="$v.values.value.$anyError" @input="onInput()" />
         <v-layout v-if="!values.foundByUser">
-            <v-btn :disabled="!$v.$anyDirty || $v.$anyError" class="ml-0" type="submit" color="primary">Save</v-btn>
-            <v-btn v-if="values.id" color="warning" @click="deleteBox">Delete</v-btn>
+            <v-btn v-if="hasPermission(permissionEnum.EDIT_BOX)" :disabled="!$v.$anyDirty || $v.$anyError" class="ml-0" type="submit" color="primary">Save</v-btn>
+            <v-btn v-if="values.id && hasPermission(permissionEnum.DELETE_BOX)" color="warning" @click="deleteBox">Delete</v-btn>
             <v-spacer />
-            <v-btn justify-right color="success" @click="markAsFound">Mark as found</v-btn>
+            <v-btn v-if="hasPermission(permissionEnum.FIND_BOX)" justify-right color="success" @click="markAsFound">Mark as found</v-btn>
         </v-layout>
         <v-layout row v-else>
             <v-flex xs3>
@@ -23,6 +23,7 @@
 </template>
 
 <script>
+import { permissions } from '@/helper/enums';
 import { required } from 'vuelidate/lib/validators';
 import _merge from 'lodash/merge';
 export default {
@@ -37,6 +38,11 @@ export default {
         return {
             values: {}
         };
+    },
+    computed: {
+        permissionEnum() {
+            return permissions;
+        }
     },
     methods: {
         submit() {

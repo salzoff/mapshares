@@ -20,6 +20,7 @@
 
 <script>
 import { EventBus, Events } from '../../events';
+import { functions } from '@/firebaseConfig';
 import _difference from 'lodash/difference';
 import _pick from 'lodash/pick';
 import MapBoxForm from '@/components/map/box/Form.vue';
@@ -79,7 +80,6 @@ export default {
     },
     methods: {
         saveBox(data) {
-            console.log('saveBox', data);
             this.data = data;
             const newBox = Object.assign({}, this.data);
             delete newBox.boxMarker;
@@ -102,12 +102,8 @@ export default {
             });
         },
         markAsFound() {
-            const newBox = Object.assign({}, this.data);
-            delete newBox.boxMarker;
-            newBox.foundBy = this.currentUserProfile.ref;
-            newBox.foundAt = new Date();
-            this.$store.dispatch('box/updateBox', newBox);
-            console.log(this.currentUserProfile.ref);
+            const markBoxAsFound = functions.httpsCallable('markBoxAsFound');
+            markBoxAsFound({ id: this.data.id });
         },
         saveBoxHints() {
             if (this.currentHint) {

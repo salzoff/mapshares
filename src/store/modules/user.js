@@ -60,7 +60,6 @@ const actions = {
             if (data && data.userRole) {
                 return data.userRole.get().then(roleResponse => {
                     const roleData = roleResponse.data();
-                    console.log(roleData);
                     commit('SET_USER_PROFILE', Object.assign(data, {
                         ref: response.ref,
                         lastLocationAt: data.lastLocationAt ? data.lastLocationAt.toDate() : new Date(),
@@ -78,11 +77,7 @@ const actions = {
         });
     },
     createUserProfile: ({ state }, payload) => {
-        console.log('createUserProfile', payload);
         delete payload.profile.password;
-        payload.profile.userRole = userRolesCollection.doc('0c5dcOJ5B8fLrcPVJ2fS');
-        payload.profile.createdAt = new Date();
-        payload.profile.lastLogin = new Date();
         return userProfileCollection.doc(payload.id).set(payload.profile);
     },
     clearUserData: ({ commit }) => {

@@ -38,7 +38,9 @@ let unbindGeoQueryListener;
 
 const actions = {
     updateGeoQuery: ({ commit, state }, payload) => {
+        console.log('update Geoquery');
         if (Date.now() - queryTimestamp > 2000) {
+            console.log('check distance');
             let queryDistance;
             let distanceFromQueryCenter;
             let computedDistance;
@@ -48,6 +50,7 @@ const actions = {
                     return;
                 }
             }
+            console.log('do update');
             queryDistance = state.google.maps.geometry.spherical.computeDistanceBetween(payload.bounds.getNorthEast(), payload.bounds.getSouthWest()) / 2;
             computedDistance = queryDistance * (payload.zoom * 0.5);
             if (unbindGeoQueryListener) {
@@ -64,11 +67,6 @@ const actions = {
                     const entryData = entry.data();
                     return entry.data().ref.get().then(objectEntry => {
                         try {
-                            /* console.log(entryData);
-                            console.log(entryData.ref);
-
-                            console.log(objectEntry);
-                            console.log(objectEntry.data()); */
                             const newObject = Object.assign(objectEntry.data(), {
                                 objectType: entryData.objectType,
                                 id: objectEntry.id
@@ -107,7 +105,7 @@ const actions = {
                             }
                             mapObjects.push(newObject);
                         } catch (e) {
-                            console.log(e.stack);
+                            console.log(e.stack, entry.id);
                         }
                     });
                 })).then(objectEntries => {
