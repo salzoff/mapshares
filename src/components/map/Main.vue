@@ -243,16 +243,21 @@ export default {
                 });
                 newMarker.id = user.id;
                 newMarker.addListener('click', e => {
-                    user.userRole.get().then(result => {
-                        const roleData = result.data();
-                        user.role = roleData.name;
-                        this.mode = modes.VIEW_USER;
-                        this.$store.dispatch('drawer/setTitle', 'View user');
-                        this.$store.dispatch('drawer/setComponent', 'map-user-drawer');
-                        this.$store.dispatch('drawer/setData', Object.assign({}, user, {
-                            viewedUser: user
-                        }));
-                        EventBus.$emit(Events.SHOW_CONTENT_IN_DRAWER);
+                    user.ref.get().then(userDoc => {
+                        const newUser = userDoc.data();
+                        newUser.id = userDoc.id;
+                        newUser.lastLocationAt = newUser.lastLocationAt.toDate();
+                        newUser.createdAt = newUser.createdAt.toDate();
+                        newUser.lastLogin = newUser.lastLogin.toDate();
+                        newUser.userRole.get().then(result => {
+                            const roleData = result.data();
+                            user.role = roleData.name;
+                            this.mode = modes.VIEW_USER;
+                            this.$store.dispatch('drawer/setTitle', 'View user');
+                            this.$store.dispatch('drawer/setComponent', 'map-user-drawer');
+                            this.$store.dispatch('drawer/setData', Object.assign({}, { viewedUser: newUser }));
+                            EventBus.$emit(Events.SHOW_CONTENT_IN_DRAWER);
+                        });
                     });
                 });
                 user.marker = newMarker;
@@ -294,19 +299,21 @@ export default {
                     icon: 'assets/images/icons/logo-found-klein.gif'
                 });
                 newMarker.addListener('click', (e) => {
-                    const newBox = this.objects[box.id];
-                    this.mode = modes.EDIT_BOX;
-                    this.$store.dispatch('drawer/setTitle', 'View box');
-                    this.$store.dispatch('drawer/setComponent', 'map-box-drawer');
-                    this.$store.dispatch('box/fetchHintsForBox', newBox.id).then(() => {
-                        newBox.editBoxMarker = newMarker;
-                        newBox.boxHints = this.$store.getters['box/hintsForBox'];
-                        newBox.foundBy = newBox.foundBy ? newBox.foundBy : null;
-                        newBox.foundAt = newBox.foundAt ? newBox.foundAt : null;
-                        newBox.foundBy.get().then(foundBy => {
-                            newBox.foundByUser = foundBy.data().username;
-                            this.$store.dispatch('drawer/setData', newBox);
-                            EventBus.$emit(Events.SHOW_CONTENT_IN_DRAWER);
+                    this.objects[box.id].ref.get().then(newBox => {
+                        this.mode = modes.EDIT_BOX;
+                        this.$store.dispatch('drawer/setTitle', 'View box');
+                        this.$store.dispatch('drawer/setComponent', 'map-box-drawer');
+                        this.$store.dispatch('box/fetchHintsForBox', newBox.id).then(() => {
+                            const newBoxData = newBox.data();
+                            newBoxData.editBoxMarker = newMarker;
+                            newBoxData.boxHints = this.$store.getters['box/hintsForBox'];
+                            newBoxData.id = newBox.id;
+                            newBoxData.foundBy.get().then(foundBy => {
+                                console.log(newBox);
+                                newBoxData.foundByUser = foundBy.data().username;
+                                this.$store.dispatch('drawer/setData', newBoxData);
+                                EventBus.$emit(Events.SHOW_CONTENT_IN_DRAWER);
+                            });
                         });
                     });
                 });
@@ -371,20 +378,22 @@ export default {
         },
         showBoxInDrawer(box, marker = null) {
             if (this.hasPermission(permissions.SHOW_BOX)) {
-                const newBox = Object.assign({}, this.objects[box.id]);
-                this.mode = modes.EDIT_BOX;
-                this.$store.dispatch('drawer/setTitle', 'Edit box');
-                this.$store.dispatch('drawer/setComponent', 'map-box-drawer');
-                this.$store.dispatch('box/fetchHintsForBox', newBox.id).then(() => {
-                    if (marker) {
-                        newBox.editBoxMarker = marker;
-                    }
-                    newBox.boxHints = this.$store.getters['box/hintsForBox'];
-                    newBox.foundBy = null;
-                    newBox.foundAt = null;
-                    newBox.foundByUser = null;
-                    this.$store.dispatch('drawer/setData', newBox);
-                    EventBus.$emit(Events.SHOW_CONTENT_IN_DRAWER);
+                box.ref.get().then(boxObject => {
+                    const newBox = Object.assign({}, boxObject.data(), this.objects[box.id]);
+                    this.mode = modes.EDIT_BOX;
+                    this.$store.dispatch('drawer/setTitle', 'Edit box');
+                    this.$store.dispatch('drawer/setComponent', 'map-box-drawer');
+                    this.$store.dispatch('box/fetchHintsForBox', newBox.id).then(() => {
+                        if (marker) {
+                            newBox.editBoxMarker = marker;
+                        }
+                        newBox.boxHints = this.$store.getters['box/hintsForBox'];
+                        newBox.foundBy = null;
+                        newBox.foundAt = null;
+                        newBox.foundByUser = null;
+                        this.$store.dispatch('drawer/setData', newBox);
+                        EventBus.$emit(Events.SHOW_CONTENT_IN_DRAWER);
+                    });
                 });
             }
         },
@@ -454,7 +463,29 @@ export default {
                     if (Date.now() - lastBoxSorting > 500) {
                         lastBoxSorting = Date.now();
                         this.sortBoxReferences({ lat: e.latLng.lat(), lng: e.latLng.lng() });
-                        this.simulationItems = this.boxReferences.slice(0, 5).map(box => Object.assign({ distance: Math.round(this.distancesToPoint[box.id]) }, box));
+                        const simulationItems = [];
+                        const promises = [];
+                        for (let i = 0, max = this.boxReferences.length >= 5 ? 5 : this.boxReferences.length; i < max; i++) {
+                            this.boxReferences[i] = Object.assign(this.boxReferences[i], { distance: Math.round(this.distancesToPoint[this.boxReferences[i].id]) });
+                            if (!this.boxReferences[i].title) {
+                                promises.push(this.boxReferences[i].ref.get().then(boxEntry => {
+                                    const boxEntryData = boxEntry.data();
+                                    if (!boxEntryData.position.lat) {
+                                        boxEntryData.position = {
+                                            lat: boxEntryData.position.latitude,
+                                            lng: boxEntryData.position.longitude
+                                        };
+                                    }
+                                    this.boxReferences[i] = Object.assign({}, this.boxReferences[i], boxEntryData);
+                                    simulationItems[i] = this.boxReferences[i];
+                                }));
+                            } else {
+                                simulationItems[i] = this.boxReferences[i];
+                            }
+                        }
+                        Promise.all(promises).then(() => {
+                            this.simulationItems = simulationItems;
+                        });
                     }
                 });
             } else {

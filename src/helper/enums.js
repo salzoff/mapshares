@@ -16,6 +16,13 @@ const permissions = {
     SHOW_USER: 'SHOW_USER'
 };
 
+const boxHintTypes = {
+    LOCATION: 1,
+    TEXT: 2,
+    IMAGE: 3
+};
+
 export {
-    permissions
+    permissions,
+    boxHintTypes
 };

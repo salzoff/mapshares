@@ -1,6 +1,6 @@
 <template>
     <v-container>
-        <h2>Edit profile</h2>
+        <h2 class="headline">Edit profile</h2>
         <profile-form></profile-form>
     </v-container>
 </template>

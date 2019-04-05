@@ -62,57 +62,20 @@ const actions = {
                 const mapObjects = [];
                 return Promise.all(result.docs.map(entry => {
                     const entryData = entry.data();
-                    return entryData.ref.get().then(objectEntry => {
-                        try {
-                            const newObject = Object.assign(objectEntry.data(), {
-                                objectType: entryData.objectType,
-                                id: objectEntry.id,
-                                ref: entryData.ref
-                            });
-                            switch (entryData.objectType) {
-                                case 1:
-                                    newObject.lastLocation = {
-                                        lat: newObject.lastLocation.latitude,
-                                        lng: newObject.lastLocation.longitude
-                                    };
-                                    newObject.lastLocationAt = newObject.lastLocationAt.toDate();
-                                    newObject.createdAt = newObject.createdAt.toDate();
-                                    newObject.lastLogin = newObject.lastLogin.toDate();
-                                    break;
-                                case 2:
-                                    newObject.position = {
-                                        lat: newObject.position.latitude,
-                                        lng: newObject.position.longitude
-                                    };
-                                    break;
-                                case 3:
-                                    newObject.position = {
-                                        lat: newObject.position.latitude,
-                                        lng: newObject.position.longitude
-                                    };
-                                    newObject.forBox = entryData.forBox;
-                                    break;
-                                case 4:
-                                    newObject.position = {
-                                        lat: newObject.position.latitude,
-                                        lng: newObject.position.longitude
-                                    };
-                                    break;
-                            }
-                            /* const objectData = objectEntry.data();
-                            const newObject = Object.assign({}, entryData);
-                            console.log(objectEntry);
-                            newObject.position = {
-                                lat: objectData.position ? objectData.position.latitude : objectData.lastLocation.latitude,
-                                lng: objectData.position ? objectData.position.longitude : objectData.lastLocation.longitude
-                            };
-                            newObject.value = 0;
-                            console.log('newObject', newObject); */
-                            mapObjects.push(newObject);
-                        } catch (e) {
-                            console.log(e.stack, entry.id);
-                        }
-                    });
+                    try {
+                        const newObject = Object.assign(entryData, {
+                            id: entryData.ref.id,
+                            position: {
+                                lat: entryData.coordinates.latitude,
+                                lng: entryData.coordinates.longitude
+                            },
+                            value: entryData.value ? entryData.value : 0
+                        });
+                        newObject.forBox = entryData.forBox ? entryData.forBox : null;
+                        mapObjects.push(newObject);
+                    } catch (e) {
+                        console.log(e.stack, entry.id);
+                    }
                 })).then(() => {
                     commit('SET_MAP_OBJECTS', mapObjects);
                 });

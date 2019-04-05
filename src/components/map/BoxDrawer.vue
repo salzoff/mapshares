@@ -12,9 +12,15 @@
             :google="google"
             :hints="boxHints"
             :editBoxMarker="editBoxMarker"
+            :editable="!formData.foundByUser"
             @saveBoxHints="saveBoxHints"
             @deleteBoxHint="deleteBoxHint"
         ></map-box-hints>
+        <v-layout row v-if="data.id">
+            <v-flex xs12 class="text-xs-center">
+                <v-btn color="primary" @click="openBoxPage">Open box page</v-btn>
+            </v-flex>
+        </v-layout>
     </v-container>
 </template>
 
@@ -121,6 +127,15 @@ export default {
                 });
             }
             this.boxHints.splice(index, 1);
+        },
+        openBoxPage() {
+            console.log(this);
+            console.log(this.boxId);
+            this.$router.push({
+                name: 'boxdetails',
+                params: { id: this.boxId }
+            });
+            EventBus.$emit(Events.HIDE_CONTENT_IN_DRAWER);
         }
     },
     watch: {

@@ -12,7 +12,6 @@ firestore.collection('userProfile').get().then(entries => {
     entries.forEach(entry => {
         geoCollection.doc(entry.id).get().then(res => {
             if (!res.exists) {
-                console.log('user', entry.id);
                 const data = entry.data();
                 geoCollection.doc(entry.id).set({
                     coordinates: data.lastLocation,

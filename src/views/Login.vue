@@ -2,7 +2,7 @@
     <v-container>
         <v-layout>
             <v-flex xl6 md9 sm12>
-                <h2>Log In</h2>
+                <h2 class="headline mb-2">Log In</h2>
                 <v-form @submit.prevent="login">
                     <v-text-field v-model.trim="email" label="E-Mail"></v-text-field>
                     <v-text-field v-model.trim="password" type="password" label="Password"></v-text-field>

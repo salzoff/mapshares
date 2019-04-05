@@ -1,7 +1,7 @@
 <template>
     <v-container>
         <template v-if="currentUserProfile">
-            <h2 class="mb-2">Profile of {{ currentUserProfile.username }}</h2>
+            <h2 class="mb-2 headline">Profile of {{ currentUserProfile.username }}</h2>
             <profile-overview :profile="currentUserProfile" :editMode="true"></profile-overview>
         </template>
         <template v-else>

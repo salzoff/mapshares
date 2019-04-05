@@ -7,7 +7,7 @@
             <v-btn v-if="hasPermission(permissionEnum.EDIT_BOX)" :disabled="!$v.$anyDirty || $v.$anyError" class="ml-0" type="submit" color="primary">Save</v-btn>
             <v-btn v-if="values.id && hasPermission(permissionEnum.DELETE_BOX)" color="warning" @click="deleteBox">Delete</v-btn>
             <v-spacer />
-            <v-btn v-if="hasPermission(permissionEnum.FIND_BOX)" justify-right color="success" @click="markAsFound">Mark as found</v-btn>
+            <v-btn v-if="values.id && hasPermission(permissionEnum.FIND_BOX)" justify-right color="success" @click="markAsFound">Mark as found</v-btn>
         </v-layout>
         <v-layout row v-else>
             <v-flex xs3>
@@ -62,7 +62,6 @@ export default {
         data: {
             deep: true,
             handler: function (values) {
-                console.log(values);
                 this.values = _merge({}, values);
                 this.$v.$reset();
             }

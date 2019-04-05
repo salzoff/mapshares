@@ -102,7 +102,7 @@ export default {
             });
         },
         editProfile() {
-            this.$router.push('editprofile');
+            this.$router.push({ name: 'editprofile' });
         }
     },
     watch: {

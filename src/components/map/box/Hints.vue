@@ -42,8 +42,8 @@
                                     </v-flex>
                                     <v-flex xs5 xs4 class="text-xs-right">{{ formatDate(hint.visibleFrom) }}</v-flex>
                                     <v-flex xs3 class="text-xs-right">
-                                        <v-btn v-if="hasPermission(permissionsEnum.EDIT_HINT)" small icon @click="editBoxHint(hint)"><v-icon>edit</v-icon></v-btn>
-                                        <v-btn v-if="hasPermission(permissionsEnum.DELETE_HINT)" small icon @click="deleteBoxHint(hint, index)"><v-icon>clear</v-icon></v-btn>
+                                        <v-btn v-if="hasPermission(permissionsEnum.EDIT_HINT) && editable" small icon @click="editBoxHint(hint)"><v-icon>edit</v-icon></v-btn>
+                                        <v-btn v-if="hasPermission(permissionsEnum.DELETE_HINT) && editable" small icon @click="deleteBoxHint(hint, index)"><v-icon>clear</v-icon></v-btn>
                                     </v-flex>
                                 </template>
                                 <template v-else-if="hint.type === hintTypeText">
@@ -58,8 +58,8 @@
                                     </v-flex>
                                     <v-flex xs5 xs4 class="text-xs-right">{{ formatDate(hint.visibleFrom) }}</v-flex>
                                     <v-flex xs3 class="text-xs-right">
-                                        <v-btn v-if="hasPermission(permissionsEnum.EDIT_HINT)" small icon @click="editBoxHint(hint)"><v-icon>edit</v-icon></v-btn>
-                                        <v-btn v-if="hasPermission(permissionsEnum.DELETE_HINT)" small icon @click="deleteBoxHint(hint, index)"><v-icon>clear</v-icon></v-btn>
+                                        <v-btn v-if="hasPermission(permissionsEnum.EDIT_HINT) && editable" small icon @click="editBoxHint(hint)"><v-icon>edit</v-icon></v-btn>
+                                        <v-btn v-if="hasPermission(permissionsEnum.DELETE_HINT) && editable" small icon @click="deleteBoxHint(hint, index)"><v-icon>clear</v-icon></v-btn>
                                     </v-flex>
                                 </template>
                                 <template v-else-if="hint.type === hintTypeImage">
@@ -76,8 +76,8 @@
                                     </v-flex>
                                     <v-flex xs4 class="text-xs-right">{{ formatDate(hint.visibleFrom) }}</v-flex>
                                     <v-flex xs3 class="text-xs-right">
-                                        <v-btn v-if="hasPermission(permissionsEnum.EDIT_HINT)" small icon @click="editBoxHint(hint)"><v-icon>edit</v-icon></v-btn>
-                                        <v-btn v-if="hasPermission(permissionsEnum.DELETE_HINT)" small icon @click="deleteBoxHint(hint, index)"><v-icon>clear</v-icon></v-btn>
+                                        <v-btn v-if="hasPermission(permissionsEnum.EDIT_HINT) && editable" small icon @click="editBoxHint(hint)"><v-icon>edit</v-icon></v-btn>
+                                        <v-btn v-if="hasPermission(permissionsEnum.DELETE_HINT) && editable" small icon @click="deleteBoxHint(hint, index)"><v-icon>clear</v-icon></v-btn>
                                     </v-flex>
                                 </template>
                             </v-layout>
@@ -241,7 +241,7 @@
                             </template>
                         </v-card-text>
                         <v-btn
-                            v-if="index === boxHints.length - 1 && hasPermission(permissionsEnum.ADD_HINT)"
+                            v-if="index === boxHints.length - 1 && hasPermission(permissionsEnum.ADD_HINT) && editable"
                             color="primary"
                             @click="addBoxHint"
                             small
@@ -258,23 +258,19 @@
             </v-layout>
         </template>
         <v-layout row class="mt-2">
-            <v-btn v-if="hasPermission(permissionsEnum.ADD_HINT) || hasPermission(permissionsEnum.EDIT_HINT)" color="primary" @click="saveBoxHints" class="ml-0" :disabled="!$v.$anyDirty  || $v.$anyError || (currentHint && currentHint.editMode)">Save hints</v-btn>
+            <v-btn v-if="(hasPermission(permissionsEnum.ADD_HINT) || hasPermission(permissionsEnum.EDIT_HINT)) && editable" color="primary" @click="saveBoxHints" class="ml-0" :disabled="!$v.$anyDirty  || $v.$anyError || (currentHint && currentHint.editMode)">Save hints</v-btn>
         </v-layout>
     </div>
 </template>
 
 <script>
 import { getRandomPointWithinDistance } from '@/helper/location';
-import { permissions } from '@/helper/enums';
+import { permissions, boxHintTypes } from '@/helper/enums';
 import { storage } from '@/firebaseConfig';
 import FileInput from '@/components/common/FileInput.vue';
 import LightBox from 'vue-image-lightbox';
 import moment from 'moment';
-const boxHintTypes = {
-    LOCATION: 1,
-    TEXT: 2,
-    IMAGE: 3
-};
+
 export default {
     name: 'map-box-hints',
     props: {
@@ -292,6 +288,10 @@ export default {
         google: {
             type: Object,
             default: () => {}
+        },
+        editable: {
+            type: Boolean,
+            default: true
         }
     },
     components: { FileInput, LightBox },
@@ -376,19 +376,16 @@ export default {
             this.currentHint = this.boxHints[this.boxHints.length - 1];
         },
         editBoxHint(boxHint) {
-            console.log('edit', boxHint, this.currentHint);
             if (this.currentHint) {
                 delete this.currentHint.editMode;
             }
             this.$set(boxHint, 'editMode', true);
             this.$set(this, 'currentHint', boxHint);
-            console.log(this.currentHint.visibleFrom);
         },
         deleteBoxHint(boxHint, index) {
             this.$emit('deleteBoxHint', boxHint, index);
         },
         saveBoxHint(boxHint) {
-            console.log(boxHint);
             delete this.currentHint.editMode;
             if (boxHint.type === boxHintTypes.IMAGE) {
                 boxHint.fileName = boxHint.image.name;
@@ -397,7 +394,6 @@ export default {
             this.$v.$touch();
         },
         showLocationRange(range, location = null) {
-            console.log('showLocationRange', range, location);
             let rangeCircle;
             this.removeOldRangeCircle();
             if (range > 0) {
@@ -432,18 +428,9 @@ export default {
         saveDate(date) {
             this.currentHint.visibleFrom = moment(this.dateString).toDate();
         },
-        createImageUrl(boxHint) {
-            const imageRef = storage.ref().child('boxHintImages/' + boxHint.id);
-            return new Promise(resolve => {
-                imageRef.getDownloadURL().then(url => {
-                    resolve(url);
-                });
-            });
-        },
         showImage(hint) {
-            this.createImageUrl(hint).then(url => {
+            this.createFileUrl('boxHintImages/' + hint.id).then(url => {
                 this.hintLightBoxImages = [{ src: url }];
-                console.log(this.$refs.hintLightBox);
                 this.$refs.hintLightBox[0].showImage(0);
             });
         }
@@ -465,7 +452,7 @@ export default {
                     this.showLocationRange(hint.value.distanceRange, hint.value.position);
                 }
                 this.currentImageUrl = '';
-                if (hint.type === boxHintTypes.IMAGE) {
+                if (hint.type === boxHintTypes.IMAGE && hint.id) {
                     this.createImageUrl(hint).then(url => {
                         this.currentImageUrl = url;
                     });

@@ -2,7 +2,7 @@
     <v-container>
         <v-layout>
             <v-flex xl6 md9 sm12>
-                <h2>Sign up</h2>
+                <h2 class="headline mb-2">Sign up</h2>
                 <profile-form></profile-form>
             </v-flex>
         </v-layout>

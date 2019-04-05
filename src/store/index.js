@@ -28,7 +28,6 @@ auth.onAuthStateChanged(user => {
     if (user) {
         store.dispatch('user/setCurrentUser', user);
         store.dispatch('user/fetchUserProfile').then(() => {
-            store.dispatch('box/fetchBoxes');
             startLocationUpdater(store);
         });
     }

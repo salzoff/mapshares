@@ -1,11 +1,8 @@
 import _merge from 'lodash/merge';
 import { boxCollection, userProfileCollection, storage } from '@/firebaseConfig';
 import firebase from 'firebase';
-import { GeoFirestore } from 'geofirestore';
-import { updateBoxInGeoLocation, deleteBoxInGeoLocation, updateBoxHintsInGeoLocation, deleteBoxHintInGeoLocation } from '../../helper/geofirestore';
+import { deleteBoxInGeoLocation, updateBoxHintsInGeoLocation, deleteBoxHintInGeoLocation } from '../../helper/geofirestore';
 const db = firebase.firestore();
-const geoFirestore = new GeoFirestore(db);
-const geoRef = geoFirestore.collection('geoLocation');
 
 const mergeSnapshotDataWithId = snapshot => {
     return Object.assign(snapshot.data(), {
@@ -17,7 +14,8 @@ const state = {
     boxesInMap: [],
     boxesCreatedByUser: [],
     boxesFoundByUser: [],
-    hintsForBox: []
+    hintsForBox: [],
+    detailViewBox: null
 };
 
 const mutations = {
@@ -38,8 +36,12 @@ const mutations = {
             boxesInMap: [],
             boxesCreatedByUser: [],
             boxesFoundByUser: [],
-            hintsForBox: []
+            hintsForBox: [],
+            detailViewBox: null
         };
+    },
+    SET_DETAIL_VIEW_BOX (state, payload) {
+        state.detailViewBox = payload;
     }
 };
 
@@ -49,10 +51,12 @@ let unsubscribeBoxesFoundByUser;
 let unsubscribeHintsForBox;
 
 const actions = {
-    fetchBoxes: ({ state, rootState, dispatch }) => {
-        dispatch('fetchBoxesInMap');
-        dispatch('fetchBoxesCreatedByUser');
-        // dispatch('fetchBoxesFoundByUser');
+    fetchBoxForDetailView: ({ state, commit }, payload) => {
+        boxCollection.doc(payload).get().then((box) => {
+            commit('SET_DETAIL_VIEW_BOX', Object.assign({
+                id: payload
+            }, box.data()));
+        });
     },
     fetchBoxesInMap: ({ state, commit }, payload) => {
         unsubscribeBoxesInMap = boxCollection.onSnapshot(result => {
@@ -113,7 +117,6 @@ const actions = {
             userProfileCollection.doc(rootState.user.currentUser.uid).update({
                 createdBoxes: firebase.firestore.FieldValue.arrayUnion(boxRef)
             });
-            console.log(boxRef);
             return boxRef;
         });
     },
@@ -121,19 +124,16 @@ const actions = {
         delete payload.boxHints;
         delete payload.editBoxMarker;
         delete payload.marker;
+        delete payload.ref;
         payload.position = new firebase.firestore.GeoPoint(payload.position.lat, payload.position.lng);
-        return boxCollection.doc(payload.id).update(payload).then(boxRef => {
-            updateBoxInGeoLocation(boxCollection.doc(payload.id));
-        });
+        return boxCollection.doc(payload.id).update(payload);
     },
     deleteBox: ({ rootState }, payload) => {
         const boxRef = boxCollection.doc(payload.id);
         userProfileCollection.doc(payload.createdBy.id).update({
             createdBoxes: firebase.firestore.FieldValue.arrayRemove(boxRef)
         });
-        return boxRef.delete().then(() => {
-            deleteBoxInGeoLocation(payload.id);
-        });
+        return boxRef.delete();
     },
     saveBoxHints: ({ state }, payload) => {
         const hintCollection = boxCollection.doc(payload.id).collection('hints');
@@ -190,60 +190,12 @@ const actions = {
     }
 };
 
-const updateCache = () => {
-    const now = Date.now();
-    db.collection('box').get().then(entries => {
-        entries.forEach(entry => {
-            geoRef.doc(entry.id).get().then(res => {
-                if (!res.exists) {
-                    const data = entry.data();
-                    geoRef.doc(entry.id).set({
-                        coordinates: data.position,
-                        objectType: 2,
-                        ref: entry.ref
-                    });
-                }
-            });
-            entry.ref.collection('hints')
-                .where('type', '==', 1)
-                .orderBy('visibleFrom')
-                .get().then(hints => {
-                    let currentHint = null;
-                    let nextHint = null;
-                    hints.forEach(hint => {
-                        if (hint.data().visibleFrom.toDate().getTime() <= now) {
-                            currentHint = hint;
-                        } else if (nextHint === null) {
-                            nextHint = hint;
-                        }
-                    });
-                    if (currentHint) {
-                        const data = currentHint.data();
-                        geoRef.doc(currentHint.id).get().then(res => {
-                            if (!res.exists) {
-                                const newEntry = {
-                                    coordinates: data.position,
-                                    distanceRange: data.distanceRange,
-                                    objectType: 3,
-                                    ref: currentHint.ref
-                                };
-                                if (nextHint) {
-                                    newEntry.visibleUntil = nextHint.data().visibleFrom;
-                                }
-                                geoRef.doc(currentHint.id).set(newEntry);
-                            }
-                        });
-                    }
-                });
-        });
-    });
-};
-
 const getters = {
     boxesInMap: state => state.boxesInMap,
     boxesCreatedByUser: state => state.boxesCreatedByUser,
     boxesFoundByUser: state => state.boxesFoundByUser,
-    hintsForBox: state => state.hintsForBox
+    hintsForBox: state => state.hintsForBox,
+    detailViewBox: state => state.detailViewBox
 };
 
 export default {

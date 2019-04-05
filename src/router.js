@@ -8,6 +8,7 @@ import EditProfile from './views/EditProfile';
 import Login from './views/Login';
 import Logout from './views/Logout';
 import Signup from './views/Signup';
+import BoxView from './views/Box';
 import firebase from 'firebase';
 
 Vue.use(Router);
@@ -64,6 +65,15 @@ const router = new Router({
             path: '/editprofile/:uid?',
             name: 'editprofile',
             component: EditProfile,
+            meta: {
+                requiresAuth: true
+            }
+        },
+        {
+            path: '/boxdetails/:id',
+            name: 'boxdetails',
+            component: BoxView,
+            props: true,
             meta: {
                 requiresAuth: true
             }

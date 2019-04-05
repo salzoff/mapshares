@@ -26,12 +26,11 @@ const updateBoxInGeoLocation = boxRef => {
     return new Promise((resolve, reject) => {
         boxRef.get().then(box => {
             const data = box.data();
-            console.log(data);
             return geoCollection.doc(boxRef.id).set({
                 coordinates: data.position,
                 objectType: data.foundBy ? 4 : 2,
-                foundBy: data.foundBy,
-                ref: boxRef
+                ref: boxRef,
+                value: data.value
             }).then(() => {
                 resolve();
             }).catch(e => {
