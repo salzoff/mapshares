@@ -89,6 +89,9 @@ export default {
     },
     mounted() {
         this.loadImages();
+    },
+    beforeRouteLeave() {
+        this.imageUrls = [];
     }
 };
 </script>
