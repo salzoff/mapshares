@@ -1,6 +1,6 @@
 <template>
     <div style="position: relative">
-        <v-carousel>
+        <v-carousel v-if="imageUrls.length > 0">
             <v-carousel-item
                 v-for="(imageUrl, index) in imageUrls"
                 :key="index"
