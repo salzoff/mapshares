@@ -408,11 +408,12 @@ export default {
                 }, 0);
             this.valuesInMap = value;
         },
-        updateGeoQuery() {
+        updateGeoQuery(force = false) {
             this.$store.dispatch('map/updateGeoQuery', {
                 center: this.mapApi.getCenter(),
                 zoom: this.mapApi.getZoom(),
-                bounds: this.mapApi.getBounds()
+                bounds: this.mapApi.getBounds(),
+                force: force
             });
         },
         sortBoxReferences(point) {
@@ -503,7 +504,7 @@ export default {
             this.$store.commit('map/SET_MAP_API', map);
             this.$store.commit('map/SET_GOOGLE', this.google);
             const listener = this.mapApi.addListener('tilesloaded', e => {
-                this.updateGeoQuery();
+                this.updateGeoQuery(true);
                 this.google.maps.event.removeListener(listener);
             });
             EventBus.$emit(Events.MAP_API_LOADED);

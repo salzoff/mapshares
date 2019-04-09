@@ -38,11 +38,11 @@ let unbindGeoQueryListener;
 
 const actions = {
     updateGeoQuery: ({ commit, state }, payload) => {
-        if (Date.now() - queryTimestamp > 2000) {
+        if (Date.now() - queryTimestamp > 2000 || queryTimestamp === null) {
             let queryDistance;
             let distanceFromQueryCenter;
             let computedDistance;
-            if (state.queryCenter && state.queryDistance) {
+            if (state.queryCenter && state.queryDistance && !payload.force) {
                 distanceFromQueryCenter = state.google.maps.geometry.spherical.computeDistanceBetween(payload.center, state.queryCenter);
                 if (distanceFromQueryCenter < state.queryDistance / 2) {
                     return;

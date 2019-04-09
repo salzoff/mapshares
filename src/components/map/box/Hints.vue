@@ -266,7 +266,7 @@
 <script>
 import { getRandomPointWithinDistance } from '@/helper/location';
 import { permissions, boxHintTypes } from '@/helper/enums';
-import { storage } from '@/firebaseConfig';
+// import { storage } from '@/firebaseConfig';
 import FileInput from '@/components/common/FileInput.vue';
 import LightBox from 'vue-image-lightbox';
 import moment from 'moment';
@@ -452,7 +452,7 @@ export default {
                     this.showLocationRange(hint.value.distanceRange, hint.value.position);
                 }
                 this.currentImageUrl = '';
-                if (hint.type === boxHintTypes.IMAGE && hint.id) {
+                if (hint && hint.type === boxHintTypes.IMAGE && hint.id) {
                     this.createImageUrl(hint).then(url => {
                         this.currentImageUrl = url;
                     });

@@ -8,18 +8,23 @@
                 </v-flex>
             </v-layout>
             <v-layout row>
-                <v-flex xs12 md6 class="title mt-2">Title</v-flex>
+                <v-flex xs12>
+                    <box-images :box="box" class="mt-2 mb-2" />
+                </v-flex>
             </v-layout>
             <v-layout row>
-                <v-flex xs12 md6 class="mt-2">{{ box.title }}</v-flex>
+                <v-flex xs12 md8 class="title mt-2">Title</v-flex>
             </v-layout>
             <v-layout row>
-                <v-flex xs12 md6 class="title mt-2">Description</v-flex>
+                <v-flex xs12 md8 class="mt-2">{{ box.title }}</v-flex>
             </v-layout>
             <v-layout row>
-                <v-flex xs12 md6 class="mt-2">{{ box.description ? box.description : 'none' }}</v-flex>
+                <v-flex xs12 md8 class="title mt-2">Description</v-flex>
             </v-layout>
-            <v-flex xs12 md6 row class="title mt-2" mt-2>Value: {{ box.value }}</v-flex>
+            <v-layout row>
+                <v-flex xs12 md8 class="mt-2">{{ box.description ? box.description : 'none' }}</v-flex>
+            </v-layout>
+            <v-flex xs12 md8 row class="title mt-2">Value: {{ box.value }}</v-flex>
             <box-hints :hints="hintsForBox" />
         </template>
     </div>
@@ -27,9 +32,10 @@
 
 <script>
 import BoxHints from './Hints';
+import BoxImages from './Images';
 export default {
     name: 'box-details',
-    components: { BoxHints },
+    components: { BoxHints, BoxImages },
     props: {
         id: {
             type: String,

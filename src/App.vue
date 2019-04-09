@@ -71,4 +71,7 @@ export default {
     .v-toolbar__subtitle {
         text-transform: uppercase;
     }
+    .v-container {
+        overflow-y: scroll;
+    }
 </style>
