@@ -4,7 +4,7 @@
             <v-carousel-item
                 v-for="(imageUrl, index) in imageUrls"
                 :key="index"
-                :src="imageUrl"
+                :src="imageUrl.imageUrl"
             ></v-carousel-item>
         </v-carousel>
         <v-dialog v-model="showEditModal" width="800">
@@ -27,7 +27,7 @@
                     class="headline grey lighten-2"
                     primary-title
                 >
-                    Edit box images (tbc)
+                    Edit box images
                 </v-card-title>
                 <v-card-text>
                     <gallery-editor :images="imageUrls" @save="saveImages" @cancel="cancel" />
@@ -40,6 +40,8 @@
 <script>
 import { permissions } from '@/helper/enums';
 import GalleryEditor from '../common/GalleryEditor';
+import { storage } from '@/firebaseConfig';
+import _differenceWith from 'lodash/differenceWith';
 
 export default {
     name: 'box-images',
@@ -66,16 +68,39 @@ export default {
             const imageUrls = [];
             Promise.all(this.box.images.map(image => {
                 return this.createFileUrl(image).then(imageUrl => {
-                    imageUrls.push(imageUrl);
+                    imageUrls.push({
+                        image,
+                        imageUrl
+                    });
                 });
             })).then(() => {
                 this.imageUrls = imageUrls;
             });
         },
         saveImages(images) {
+            console.log(images, this.box);
             this.imageUrls = images;
             this.showEditModal = false;
-            this.$store.dispatch('box/updateBox', Object.assign(this.box, { images }));
+            for (let i = 0; i < images.length; i++) {
+                if (images[i].image instanceof File) {
+                    const imageRef = storage.ref().child(`boxImages/${this.box.id}/${images[i].image.name}`);
+                    imageRef.put(images[i].image);
+                    images[i] = {
+                        image: `boxImages/${this.box.id}/${images[i].image.name}`,
+                        imageUrl: this.createFileUrl(`boxImages/${this.box.id}/${images[i].image.name}`)
+                    };
+                    console.log(images[i]);
+                }
+            }
+            const imagesToDelete = _differenceWith(this.box.images, images, (imageA, imageB) => {
+                console.log(imageA, imageB);
+                return imageA === imageB.image;
+            });
+            imagesToDelete.forEach(image => {
+                storage.ref().child(image).delete();
+            });
+            console.log(imagesToDelete);
+            this.$store.dispatch('box/updateBox', Object.assign(this.box, { images: images.map(image => image.image) }));
             console.log('test');
         },
         cancel() {

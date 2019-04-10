@@ -10,7 +10,6 @@ import Logout from './views/Logout';
 import Signup from './views/Signup';
 import BoxView from './views/Box';
 import firebase from 'firebase';
-import { EventBus, Events } from './events';
 
 Vue.use(Router);
 

@@ -1,7 +1,7 @@
 import _merge from 'lodash/merge';
 import { boxCollection, userProfileCollection, storage } from '@/firebaseConfig';
 import firebase from 'firebase';
-import { deleteBoxInGeoLocation, updateBoxHintsInGeoLocation, deleteBoxHintInGeoLocation } from '../../helper/geofirestore';
+import { updateBoxHintsInGeoLocation, deleteBoxHintInGeoLocation } from '../../helper/geofirestore';
 const db = firebase.firestore();
 
 const mergeSnapshotDataWithId = snapshot => {
@@ -125,7 +125,9 @@ const actions = {
         delete payload.editBoxMarker;
         delete payload.marker;
         delete payload.ref;
-        payload.position = new firebase.firestore.GeoPoint(payload.position.lat, payload.position.lng);
+        if (payload.position.lat) {
+            payload.position = new firebase.firestore.GeoPoint(payload.position.lat, payload.position.lng);
+        }
         return boxCollection.doc(payload.id).update(payload);
     },
     deleteBox: ({ rootState }, payload) => {

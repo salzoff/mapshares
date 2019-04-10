@@ -48,7 +48,7 @@ export default {
                 }
                 const fr = new FileReader();
                 fr.readAsDataURL(files[0]);
-                fr.addEventListener('load', () => {
+                fr.addEventListener('load', (e) => {
                     this.file = files[0]; // this is an image file that can be sent to server...
                     this.$emit('input', this.file);
                 });
