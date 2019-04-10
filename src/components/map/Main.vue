@@ -62,9 +62,21 @@
                         <v-list-tile>
                             <v-list-tile-content>
                                 <strong>Values in map</strong>
-                            </v-list-tile-content>
-                            <v-list-tile-content>
-                                {{ valuesInMap }}
+                                <v-dialog v-model="showValuePrompt" width="300">
+                                    <template v-slot:activator="{ on }">
+                                        <v-btn icon small absolute right v-on="on"><v-icon>edit</v-icon></v-btn>{{ valuesInMap }}
+                                    </template>
+                                    <v-card>
+                                        <v-card-title>
+                                            Edit box values in map
+                                        </v-card-title>
+                                        <v-card-text>
+                                            <v-text-field v-model="valueEditField" label="New value" type="number" />
+                                            <v-btn color="primary" @click="assignNewBoxValue">Ok</v-btn>
+                                            <v-btn @click="showValuePrompt = false; valueEditField = 0;">Cancel</v-btn>
+                                        </v-card-text>
+                                    </v-card>
+                                </v-dialog>
                             </v-list-tile-content>
                         </v-list-tile>
                     </v-list>
@@ -141,7 +153,9 @@ export default {
             simulateDistances: false,
             simulationListener: null,
             boxReferences: [],
-            distancesToPoint: {}
+            distancesToPoint: {},
+            showValuePrompt: false,
+            valueEditField: 0
         };
     },
     computed: {
@@ -427,6 +441,17 @@ export default {
                 }
                 return this.distancesToPoint[boxA.id] - this.distancesToPoint[boxB.id];
             });
+        },
+        assignNewBoxValue() {
+            const bounds = this.mapApi.getBounds();
+            console.log(bounds);
+            this.mapObjects
+                .filter(mapObject => mapObject.objectType === mapObjectTypes.BOX)
+                .filter(mapObject => bounds.contains(mapObject.position))
+                .forEach(box => {
+                    this.$store.dispatch('box/updateBox', { id: box.id, value: this.valueEditField });
+                });
+            this.showValuePrompt = false;
         }
     },
     watch: {

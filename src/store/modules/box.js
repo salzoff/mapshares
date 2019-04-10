@@ -125,7 +125,7 @@ const actions = {
         delete payload.editBoxMarker;
         delete payload.marker;
         delete payload.ref;
-        if (payload.position.lat) {
+        if (payload.position && payload.position.lat) {
             payload.position = new firebase.firestore.GeoPoint(payload.position.lat, payload.position.lng);
         }
         return boxCollection.doc(payload.id).update(payload);
