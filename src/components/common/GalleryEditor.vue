@@ -50,8 +50,6 @@ export default {
     },
     methods: {
         addImage(image) {
-            console.log(image);
-            console.log(this.$refs.imageInput.$el);
             this.editableImages.push({ image: image, imageUrl: URL.createObjectURL(image) });
             this.$refs.imageInput.$el.querySelector('input').value = null;
         },

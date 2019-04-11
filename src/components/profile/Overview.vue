@@ -82,9 +82,6 @@ export default {
     },
     methods: {
         saveImage() {
-            EXIF.getData(this.image, function() {
-                console.log(EXIF.getAllTags(this));
-            });
             const imageRef = storage.ref().child(`profileImages/${this.currentUserProfile.username}`);
             imageRef.put(this.image).then(() => {
                 this.$store.dispatch('user/updateUserProfile', {

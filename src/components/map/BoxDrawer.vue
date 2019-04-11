@@ -3,9 +3,20 @@
         <v-layout v-if="!data.position">
             <h3 class="subheading ">Select position on map</h3>
         </v-layout>
-        <v-layout v-else>
+        <template v-else>
+            <v-layout row>
+                <v-flex xs12>
+                    <v-carousel v-if="imageUrls.length > 0" height="200" class="mt-2 mb-3">
+                        <v-carousel-item
+                            v-for="(imageUrl, index) in imageUrls"
+                            :key="index"
+                            :src="imageUrl.imageUrl"
+                    ></v-carousel-item>
+                    </v-carousel>
+                </v-flex>
+            </v-layout>
             <map-box-form :data="formData" @saveBox="saveBox" @deleteBox="deleteBox" @markAsFound="markAsFound" />
-        </v-layout>
+        </template>
         <map-box-hints
             v-if="boxId"
             :mapApi="mapApi"
@@ -38,7 +49,8 @@ export default {
         return {
             currentHint: null,
             mapApi: null,
-            google: null
+            google: null,
+            imageUrls: []
         };
     },
     computed: {
@@ -129,13 +141,28 @@ export default {
             this.boxHints.splice(index, 1);
         },
         openBoxPage() {
-            console.log(this);
-            console.log(this.boxId);
             this.$router.push({
                 name: 'boxdetails',
                 params: { id: this.boxId }
             });
             EventBus.$emit(Events.HIDE_CONTENT_IN_DRAWER);
+        },
+        loadImages() {
+            const imageUrls = [];
+            if (!this.data.images) {
+                this.imageUrls = imageUrls;
+                return;
+            }
+            Promise.all(this.data.images.map(image => {
+                return this.createFileUrl(image).then(imageUrl => {
+                    imageUrls.push({
+                        image,
+                        imageUrl
+                    });
+                });
+            })).then(() => {
+                this.imageUrls = imageUrls;
+            });
         }
     },
     watch: {
@@ -152,6 +179,7 @@ export default {
         },
         boxId() {
             this.currentHint = null;
+            this.loadImages();
         },
         boxHintsInStore(hintsInStore) {
             const hintIds = hintsInStore.map(hint => hint.id);

@@ -66,6 +66,10 @@ export default {
     methods: {
         loadImages() {
             const imageUrls = [];
+            if (!this.box.images) {
+                this.imageUrls = imageUrls;
+                return;
+            }
             Promise.all(this.box.images.map(image => {
                 return this.createFileUrl(image).then(imageUrl => {
                     imageUrls.push({
@@ -78,7 +82,6 @@ export default {
             });
         },
         saveImages(images) {
-            console.log(images, this.box);
             this.imageUrls = images;
             this.showEditModal = false;
             for (let i = 0; i < images.length; i++) {
@@ -89,19 +92,15 @@ export default {
                         image: `boxImages/${this.box.id}/${images[i].image.name}`,
                         imageUrl: this.createFileUrl(`boxImages/${this.box.id}/${images[i].image.name}`)
                     };
-                    console.log(images[i]);
                 }
             }
             const imagesToDelete = _differenceWith(this.box.images, images, (imageA, imageB) => {
-                console.log(imageA, imageB);
                 return imageA === imageB.image;
             });
             imagesToDelete.forEach(image => {
                 storage.ref().child(image).delete();
             });
-            console.log(imagesToDelete);
             this.$store.dispatch('box/updateBox', Object.assign(this.box, { images: images.map(image => image.image) }));
-            console.log('test');
         },
         cancel() {
             this.showEditModal = false;

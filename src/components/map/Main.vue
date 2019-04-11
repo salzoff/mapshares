@@ -323,7 +323,6 @@ export default {
                             newBoxData.boxHints = this.$store.getters['box/hintsForBox'];
                             newBoxData.id = newBox.id;
                             newBoxData.foundBy.get().then(foundBy => {
-                                console.log(newBox);
                                 newBoxData.foundByUser = foundBy.data().username;
                                 this.$store.dispatch('drawer/setData', newBoxData);
                                 EventBus.$emit(Events.SHOW_CONTENT_IN_DRAWER);
@@ -444,7 +443,6 @@ export default {
         },
         assignNewBoxValue() {
             const bounds = this.mapApi.getBounds();
-            console.log(bounds);
             this.mapObjects
                 .filter(mapObject => mapObject.objectType === mapObjectTypes.BOX)
                 .filter(mapObject => bounds.contains(mapObject.position))
