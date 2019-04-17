@@ -74,7 +74,7 @@ const actions = {
                         newObject.forBox = entryData.forBox ? entryData.forBox : null;
                         mapObjects.push(newObject);
                     } catch (e) {
-                        console.log(e.stack, entry.id);
+                        console.error(e);
                     }
                 })).then(() => {
                     commit('SET_MAP_OBJECTS', mapObjects);

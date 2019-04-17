@@ -23,6 +23,7 @@
             :google="google"
             :hints="boxHints"
             :editBoxMarker="editBoxMarker"
+            :boxPosition="data.position"
             :editable="!formData.foundByUser"
             @saveBoxHints="saveBoxHints"
             @deleteBoxHint="deleteBoxHint"

@@ -1,7 +1,7 @@
 <template>
     <div>
         <v-layout>
-            <v-flex xs2>
+            <v-flex xs4 sm3 md2>
                 <v-layout column fill-height>
                     <v-list>
                         <v-list-tile  @click="moveToUserPosition" class="map-action-item">
@@ -82,24 +82,24 @@
                     </v-list>
                 </v-layout>
             </v-flex>
-            <v-flex xs10>
+            <v-flex xs8 sm9 md10>
                 <div id="map" :style="{ height: calculatedHeight + 'px' }">
                     <gmap-map
-                            :center="center"
-                            @center_changed="updateCenter"
-                            @zoom_changed="updateZoom"
-                            @idle="sync"
-                            @init="updateGeoQuery"
-                            :zoom="zoom"
-                            style="width: 100%; height: 100%"
-                            @click="handleMapClick"
-                            ref="mapRef"
+                        :center="center"
+                        @center_changed="updateCenter"
+                        @zoom_changed="updateZoom"
+                        @idle="sync"
+                        @init="updateGeoQuery"
+                        :zoom="zoom"
+                        style="width: 100%; height: 100%"
+                        @click="handleMapClick"
+                        ref="mapRef"
                     >
                         <gmap-marker
-                                v-if="!isFetchingInitialUserProfile"
-                                :position="userPosition"
-                                :clickable="true"
-                                :draggable="true"
+                            v-if="!isFetchingInitialUserProfile"
+                            :position="userPosition"
+                            :clickable="true"
+                            :draggable="true"
                         />
                     </gmap-map>
                 </div>

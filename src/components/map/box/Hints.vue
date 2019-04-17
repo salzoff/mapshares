@@ -292,6 +292,9 @@ export default {
         editable: {
             type: Boolean,
             default: true
+        },
+        boxPosition: {
+            type: Object
         }
     },
     components: { FileInput, LightBox },
@@ -395,11 +398,13 @@ export default {
         },
         showLocationRange(range, location = null) {
             let rangeCircle;
+            let newPoint;
             this.removeOldRangeCircle();
             if (range > 0) {
-                const newPoint = location === null
-                    ? getRandomPointWithinDistance(this.currentHint.value.position.lat, this.currentHint.value.position.lng, range)
+                newPoint = location === null
+                    ? getRandomPointWithinDistance(this.boxPosition.lat, this.boxPosition.lng, range)
                     : location;
+                this.currentHint.value.position = newPoint;
                 rangeCircle = new this.google.maps.Circle({
                     center: newPoint,
                     radius: range,
@@ -409,7 +414,7 @@ export default {
                     map: this.mapApi
                 });
             } else {
-                const newPoint = location === null
+                newPoint = location === null
                     ? this.currentHint.value.position
                     : location;
                 rangeCircle = new this.google.maps.Marker({

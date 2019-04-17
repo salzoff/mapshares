@@ -26,7 +26,7 @@ Vue.use(VueGoogleMaps, {
     load: {
         key: 'AIzaSyAQgnykziSrXxoEcqAiQirbK-amboOxbQ4',
         autobindAllEvents: true,
-        libraries: 'geometry'
+        libraries: 'geometry, places'
     }
 });
 

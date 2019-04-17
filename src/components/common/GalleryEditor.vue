@@ -74,7 +74,4 @@ export default {
         top: 5px;
         right: 5px;
     }
-    .drag-item:active {
-        cursor: grabbing;
-    }
 </style>
