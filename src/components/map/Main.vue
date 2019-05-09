@@ -121,9 +121,11 @@ const modes = {
 };
 const mapObjectTypes = {
     USER: 1,
-    BOX: 2,
-    HINT: 3,
-    FOUND_BOX: 4
+    VIRTUAL_BOX: 2,
+    PHYSICAL_BOX: 3,
+    FOUND_VIRTUAL_BOX: 4,
+    FOUND_PHYSICAL_BOX: 5,
+    HINT: 6
 };
 export default {
     name: 'map-main',
@@ -278,7 +280,32 @@ export default {
             }
             this.objects[user.id] = user;
         },
-        markBox(box) {
+        markVirtualBox(box) {
+            console.log('markVirtualBox');
+            if (this.objects[box.ref.id] && this.objects[box.ref.id].marker) {
+                this.objects[box.ref.id].marker.setMap(null);
+            }
+            if (this.displayBoxes && this.hasPermission(permissions.SHOW_BOX_LOCATION)) {
+                const newMarker = new this.google.maps.Marker({
+                    position: box.position,
+                    map: this.mapApi,
+                    icon: 'assets/images/icons/logo-virtual-klein.gif',
+                    label: {
+                        text: box.value.toString(),
+                        fontSize: '32px',
+                        fontWeight: 'bold',
+                        color: '#555555'
+                    }
+                });
+                newMarker.addListener('click', (e) => {
+                    this.showBoxInDrawer(box, newMarker);
+                });
+                newMarker.id = box.ref.id;
+                box.marker = newMarker;
+            }
+            this.objects[box.ref.id] = box;
+        },
+        markPhysicalBox(box) {
             if (this.objects[box.ref.id] && this.objects[box.ref.id].marker) {
                 this.objects[box.ref.id].marker.setMap(null);
             }
@@ -363,17 +390,21 @@ export default {
             const objectsInMap = [];
             mapObjects.forEach(mapObject => {
                 objectsInMap.push(mapObject.id);
+                console.log(mapObject.objectType);
                 switch (mapObject.objectType) {
                     case mapObjectTypes.USER:
                         this.markUser(mapObject);
                         break;
-                    case mapObjectTypes.BOX:
-                        this.markBox(mapObject);
+                    case mapObjectTypes.VIRTUAL_BOX:
+                        this.markVirtualBox(mapObject);
+                        break;
+                    case mapObjectTypes.PHYSICAL_BOX:
+                        this.markPhysicalBox(mapObject);
                         break;
                     case mapObjectTypes.HINT:
                         this.markHint(mapObject);
                         break;
-                    case mapObjectTypes.FOUND_BOX:
+                    case mapObjectTypes.FOUND_VIRTUAL_BOX:
                         this.markFoundBox(mapObject);
                         break;
                     default:
@@ -404,6 +435,10 @@ export default {
                         newBox.foundBy = null;
                         newBox.foundAt = null;
                         newBox.foundByUser = null;
+                        if (!newBox.images) {
+                            newBox.images= [];
+                        }
+                        console.log(newBox);
                         this.$store.dispatch('drawer/setData', newBox);
                         EventBus.$emit(Events.SHOW_CONTENT_IN_DRAWER);
                     });
@@ -413,7 +448,7 @@ export default {
         updateValuesInMap() {
             const bounds = this.mapApi.getBounds();
             const value = this.mapObjects
-                .filter(mapObject => mapObject.objectType === mapObjectTypes.BOX)
+                .filter(mapObject => mapObject.objectType === mapObjectTypes.VIRTUAL_BOX)
                 .filter(mapObject => bounds.contains(mapObject.position))
                 .reduce((acc, val) => {
                     acc += parseInt(val.value);
@@ -444,7 +479,7 @@ export default {
         assignNewBoxValue() {
             const bounds = this.mapApi.getBounds();
             this.mapObjects
-                .filter(mapObject => mapObject.objectType === mapObjectTypes.BOX)
+                .filter(mapObject => mapObject.objectType === mapObjectTypes.VIRTUAL_BOX)
                 .filter(mapObject => bounds.contains(mapObject.position))
                 .forEach(box => {
                     this.$store.dispatch('box/updateBox', { id: box.id, value: this.valueEditField });
@@ -480,7 +515,7 @@ export default {
             if (value) {
                 let lastBoxSorting = Date.now();
                 const center = this.mapApi.getCenter();
-                this.boxReferences = this.mapObjects.filter(mapObject => mapObject.objectType === mapObjectTypes.BOX);
+                this.boxReferences = this.mapObjects.filter(mapObject => mapObject.objectType === mapObjectTypes.VIRTUAL_BOX);
                 this.sortBoxReferences({ lat: center.lat(), lng: center.lng() });
                 this.simulationItems = this.boxReferences.slice(0, 5);
                 this.simulationListener = this.mapApi.addListener('mousemove', e => {

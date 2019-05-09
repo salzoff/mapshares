@@ -111,7 +111,8 @@ const actions = {
         const newBox = Object.assign({}, payload, {
             createdBy: userProfileCollection.doc(rootState.user.currentUser.uid),
             createdAt: new Date(),
-            position: new firebase.firestore.GeoPoint(payload.position.lat, payload.position.lng)
+            position: new firebase.firestore.GeoPoint(payload.position.lat, payload.position.lng),
+            isPhysical: false
         });
         return boxCollection.add(newBox).then(boxRef => {
             userProfileCollection.doc(rootState.user.currentUser.uid).update({

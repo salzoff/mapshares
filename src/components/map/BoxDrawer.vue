@@ -64,7 +64,7 @@ export default {
             }
         },
         formData() {
-            return _pick(this.data, ['title', 'description', 'value', 'image', 'imageName', 'id', 'foundAt', 'foundByUser']);
+            return _pick(this.data, ['title', 'description', 'value', 'image', 'imageName', 'id', 'foundAt', 'foundByUser', 'isPhysical']);
         },
         boxMarker: {
             get() {

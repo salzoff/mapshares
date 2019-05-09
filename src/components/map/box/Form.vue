@@ -3,6 +3,7 @@
         <v-text-field v-model="values.title" label="Title" :error="$v.values.title.$anyError"  @input="onInput()" />
         <v-textarea v-model="values.description" label="Description"  @input="onInput" />
         <v-text-field v-model="values.value" type="number" label="Value" :error="$v.values.value.$anyError" @input="onInput()" />
+        <v-switch v-model="values.isPhysical" :label="values.isPhysical ? 'Physical' : 'Virtual'"  @change="onInput()" />
         <v-layout v-if="!values.foundByUser">
             <v-btn v-if="hasPermission(permissionEnum.EDIT_BOX)" :disabled="!$v.$anyDirty || $v.$anyError" class="ml-0" type="submit" color="primary">Save</v-btn>
             <v-btn v-if="values.id && hasPermission(permissionEnum.DELETE_BOX)" color="warning" @click="deleteBox">Delete</v-btn>
