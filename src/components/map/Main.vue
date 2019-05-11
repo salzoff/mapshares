@@ -83,7 +83,7 @@
                 </v-layout>
             </v-flex>
             <v-flex xs8 sm9 md10>
-                <div id="map" style="{ height: calculatedHeight + 'px' }">
+                <div id="map" :style="{ height: calculatedHeight + 'px' }">
                     <gmap-map
                         :center="center"
                         @center_changed="updateCenter"
