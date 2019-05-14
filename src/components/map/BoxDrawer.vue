@@ -123,7 +123,7 @@ export default {
         markAsFound() {
             const markBoxAsFound = functions.httpsCallable('markBoxAsFound');
             markBoxAsFound({ id: this.data.id }).then((res) => {
-                console.log(res)
+                // console.log(res)
             }).catch(e => {
                 console.error(e);
             });

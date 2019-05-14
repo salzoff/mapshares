@@ -281,7 +281,6 @@ export default {
             this.objects[user.id] = user;
         },
         markVirtualBox(box) {
-            console.log('markVirtualBox');
             if (this.objects[box.ref.id] && this.objects[box.ref.id].marker) {
                 this.objects[box.ref.id].marker.setMap(null);
             }
@@ -390,7 +389,6 @@ export default {
             const objectsInMap = [];
             mapObjects.forEach(mapObject => {
                 objectsInMap.push(mapObject.id);
-                console.log(mapObject.objectType);
                 switch (mapObject.objectType) {
                     case mapObjectTypes.USER:
                         this.markUser(mapObject);
@@ -438,7 +436,6 @@ export default {
                         if (!newBox.images) {
                             newBox.images= [];
                         }
-                        console.log(newBox);
                         this.$store.dispatch('drawer/setData', newBox);
                         EventBus.$emit(Events.SHOW_CONTENT_IN_DRAWER);
                     });
