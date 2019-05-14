@@ -70,7 +70,7 @@ const updateBoxHintsInGeoLocation = boxId => {
                 const newHint = {
                     coordinates: data.position,
                     distanceRange: data.distanceRange,
-                    objectType: 3,
+                    objectType: 6,
                     forBox: boxId,
                     ref: currentHint.ref
                 };
